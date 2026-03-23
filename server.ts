@@ -16,13 +16,7 @@ dotenv.config();
 
 async function startServer() {
   const app = express();
-
   const PORT = process.env.PORT || 3000;
-
-  app.listen(PORT, () => {
-    console.log(`Server running on port ${PORT}`);
-  });
-}
 
   // Init Database
   initDb();
@@ -36,16 +30,17 @@ async function startServer() {
   // Middleware
   app.use(express.json());
   app.use(cookieParser());
-  app.use(cors({
-    origin: true,
-    credentials: true
-  }));
+  app.use(
+    cors({
+      origin: true,
+      credentials: true,
+    })
+  );
 
   // Serve static uploads
   app.use("/uploads", express.static(uploadsDir));
 
-  // API Routes - Ми НЕ навішуємо authenticateToken тут, 
-  // бо всередині цих роутерів є публічні маршрути.
+  // API Routes
   app.use("/api/admin", authRoutes);
   app.use("/api/content", contentRoutes);
   app.use("/api/upload", uploadRoutes);
@@ -60,13 +55,13 @@ async function startServer() {
   } else {
     const distPath = path.join(process.cwd(), "dist");
     app.use(express.static(distPath));
-    app.get("*", (req, res) => {
+    app.get("*", (_req, res) => {
       res.sendFile(path.join(distPath, "index.html"));
     });
   }
 
-  app.listen(PORT, "0.0.0.0", () => {
-    console.log(`Server running on http://localhost:${PORT}`);
+  app.listen(Number(PORT), "0.0.0.0", () => {
+    console.log(`Server running on port ${PORT}`);
   });
 }
 
