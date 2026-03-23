@@ -900,6 +900,15 @@ const Contacts = ({ content }: { content: any }) => {
                   >
                     @Kizub_BRB
                   </a>
+                  <a
+                    href="https://t.me/Kizub_BRB"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-3 mt-4 px-6 py-3 rounded-2xl bg-accent text-white font-bold hover:opacity-90 transition"
+                    >
+                    <Send size={20} />
+                    Написати в Telegram
+                  </a>
                 </div>
               </div>
             </div>
