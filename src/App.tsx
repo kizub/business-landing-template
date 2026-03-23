@@ -886,31 +886,40 @@ const Contacts = ({ content }: { content: any }) => {
                 </div>
               </div>
 
-              <div className="flex items-center gap-6">
-                <div className="w-14 h-14 bg-slate-50 rounded-2xl flex items-center justify-center text-accent">
-                  <Send size={24} />
-                </div>
-                <div>
-                  <div className="text-sm font-bold text-slate-400 uppercase tracking-widest mb-1">Telegram</div>
-                  <a
-                    href="https://t.me/Kizub_BRB"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="text-xl font-bold text-slate-900 hover:text-accent transition no-underline"
-                  >
-                    @Kizub_BRB
-                  </a>
-                  <a
-                    href="https://t.me/Kizub_BRB"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="inline-flex items-center gap-3 mt-4 px-6 py-3 rounded-2xl bg-accent text-white font-bold hover:opacity-90 transition"
-                    >
-                    <Send size={20} />
-                    Написати в Telegram
-                  </a>
-                </div>
-              </div>
+              {/* TELEGRAM */}
+<div className="flex items-start gap-6">
+  <div className="w-14 h-14 bg-slate-50 rounded-2xl flex items-center justify-center text-accent shrink-0">
+    <Send size={24} />
+  </div>
+
+  <div className="flex-1">
+    <div className="text-sm font-bold text-slate-400 uppercase tracking-widest mb-1">
+      Telegram
+    </div>
+
+    <a
+      href="https://t.me/Kizub_BRB"
+      target="_blank"
+      rel="noopener noreferrer"
+      className="text-xl font-bold text-slate-900 hover:text-accent transition no-underline"
+    >
+      @Kizub_BRB
+    </a>
+
+    <a
+      href="https://t.me/Kizub_BRB"
+      target="_blank"
+      rel="noopener noreferrer"
+      className="btn-primary w-full py-5 text-lg mt-6 flex items-center justify-center gap-3"
+    >
+      <Send size={20} />
+      Написати в Telegram
+    </a>
+  </div>
+</div>
+
+
+              
             </div>
           </div>
 
