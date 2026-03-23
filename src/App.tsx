@@ -879,7 +879,7 @@ const Contacts = ({ content }: { content: any }) => {
                   <div className="text-sm font-bold text-slate-400 uppercase tracking-widest mb-1">Email</div>
                   <a
                     href="mailto:kizub888@gmail.com"
-                    className="text-xl font-bold text-slate-900 hover:text-accent hover:underline transition"
+                    className="text-xl font-bold text-slate-900 hover:text-accent transition no-underline"
                   >
                     kizub888@gmail.com
                   </a>
@@ -896,7 +896,7 @@ const Contacts = ({ content }: { content: any }) => {
                     href="https://t.me/Kizub_BRB"
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="text-xl font-bold text-slate-900 hover:text-accent hover:underline transition"
+                    className="text-xl font-bold text-slate-900 hover:text-accent transition no-underline"
                   >
                     @Kizub_BRB
                   </a>
