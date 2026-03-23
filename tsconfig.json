@@ -3,7 +3,7 @@
     "target": "ES2022",
     "module": "NodeNext",
     "moduleResolution": "NodeNext",
-    "outDir": "dist",
+    "outDir": "server-dist",
     "rootDir": ".",
     "esModuleInterop": true,
     "allowSyntheticDefaultImports": true,
@@ -12,5 +12,5 @@
     "resolveJsonModule": true
   },
   "include": ["server.ts", "server/**/*"],
-  "exclude": ["node_modules", "dist", "src"]
+  "exclude": ["node_modules", "dist", "server-dist", "src"]
 }
