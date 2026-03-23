@@ -9,7 +9,6 @@
     "allowSyntheticDefaultImports": true,
     "skipLibCheck": true,
     "strict": false,
-    "jsx": "react-jsx",
     "resolveJsonModule": true
   },
   "include": ["server.ts", "server/**/*"],
