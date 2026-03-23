@@ -18,7 +18,7 @@ export default defineConfig(({ mode }) => {
     },
     server: {
       host: '0.0.0.0',
-      allowedHosts: ['business-landing-template-production.up.railway.app'],
+      allowedHosts: true,
       hmr: process.env.DISABLE_HMR !== 'true',
     },
   };
