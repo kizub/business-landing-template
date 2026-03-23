@@ -1014,7 +1014,7 @@ const App = () => {
   return (
     <Router>
       <Routes>
-        <Route path="/admin/*" element={<Admin />} />
+        <Route path="/admin" element={<Admin />} />
         <Route path="/" element={<PublicSite />} />
       </Routes>
     </Router>
