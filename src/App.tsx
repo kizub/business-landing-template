@@ -867,25 +867,16 @@ const Contacts = ({ content }: { content: any }) => {
       <div className="container-custom">
         <div className="grid md:grid-cols-2 gap-20">
           <div>
-            <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold text-slate-900 mb-8">
-              {content?.title}
-            </h2>
-
-            <p className="text-xl text-slate-600 mb-12">
-              {content?.subtitle}
-            </p>
+            <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold text-slate-900 mb-8">{content?.title}</h2>
+            <p className="text-xl text-slate-600 mb-12">{content?.subtitle}</p>
 
             <div className="space-y-8">
-              {/* EMAIL */}
               <div className="flex items-center gap-6">
                 <div className="w-14 h-14 bg-slate-50 rounded-2xl flex items-center justify-center text-accent">
                   <Mail size={24} />
                 </div>
                 <div>
-                  <div className="text-sm font-bold text-slate-400 uppercase tracking-widest mb-1">
-                    Email
-                  </div>
-
+                  <div className="text-sm font-bold text-slate-400 uppercase tracking-widest mb-1">Email</div>
                   <a
                     href="mailto:kizub888@gmail.com"
                     className="text-xl font-bold text-slate-900 hover:text-accent hover:underline transition"
@@ -895,16 +886,12 @@ const Contacts = ({ content }: { content: any }) => {
                 </div>
               </div>
 
-              {/* TELEGRAM */}
               <div className="flex items-center gap-6">
                 <div className="w-14 h-14 bg-slate-50 rounded-2xl flex items-center justify-center text-accent">
                   <Send size={24} />
                 </div>
                 <div>
-                  <div className="text-sm font-bold text-slate-400 uppercase tracking-widest mb-1">
-                    Telegram
-                  </div>
-
+                  <div className="text-sm font-bold text-slate-400 uppercase tracking-widest mb-1">Telegram</div>
                   <a
                     href="https://t.me/Kizub_BRB"
                     target="_blank"
@@ -918,7 +905,6 @@ const Contacts = ({ content }: { content: any }) => {
             </div>
           </div>
 
-          {/* FORM */}
           <div className="bg-slate-50 p-8 md:p-12 rounded-[40px] border border-slate-100">
             <form className="space-y-6">
               <div>
@@ -930,7 +916,6 @@ const Contacts = ({ content }: { content: any }) => {
                   className="w-full px-6 py-4 rounded-2xl bg-white border border-slate-200 focus:border-accent outline-none"
                 />
               </div>
-
               <div>
                 <label className="block text-sm font-bold text-slate-900 uppercase tracking-wider mb-2">
                   {content?.formContactLabel}
@@ -940,7 +925,6 @@ const Contacts = ({ content }: { content: any }) => {
                   className="w-full px-6 py-4 rounded-2xl bg-white border border-slate-200 focus:border-accent outline-none"
                 />
               </div>
-
               <div>
                 <label className="block text-sm font-bold text-slate-900 uppercase tracking-wider mb-2">
                   {content?.formMessageLabel}
@@ -950,7 +934,6 @@ const Contacts = ({ content }: { content: any }) => {
                   className="w-full px-6 py-4 rounded-2xl bg-white border border-slate-200 focus:border-accent outline-none resize-none"
                 ></textarea>
               </div>
-
               <button className="btn-primary w-full py-5 text-lg">
                 {content?.formButtonText}
               </button>
