@@ -905,16 +905,6 @@ const Contacts = ({ content }: { content: any }) => {
     >
       @Kizub_BRB
     </a>
-
-    <a
-      href="https://t.me/Kizub_BRB"
-      target="_blank"
-      rel="noopener noreferrer"
-      className="btn-primary w-full py-5 text-lg mt-6 flex items-center justify-center gap-3"
-    >
-      <Send size={20} />
-      Написати в Telegram
-    </a>
   </div>
 </div>
 
