@@ -645,7 +645,7 @@ const Pricing = ({ items, onSelectPlan }: { items: any[], onSelectPlan: (p: any)
                   : 'bg-slate-800/50 border-white/5'
               }`}
             >
-              {plan.featured && (
+              {!!plan.featured && (
                 <div className="absolute -top-4 left-1/2 -translate-x-1/2 bg-accent text-white text-xs font-bold uppercase tracking-widest px-4 py-1 rounded-full">
                   Популярно
                 </div>
