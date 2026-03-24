@@ -160,55 +160,6 @@ const Hero = ({ content }: { content: any }) => {
                 </span>
               </div>
             </div>
-          </motion.div>
-
-
-          {/* RIGHT (МОКАП СИСТЕМИ) */}
-          <motion.div
-            initial={{ opacity: 0, x: 40 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ duration: 0.7 }}
-            className="relative"
-          >
-            <div className="bg-white rounded-2xl shadow-xl p-6 space-y-4 border">
-
-              {/* Telegram */}
-              <div className="bg-blue-50 p-4 rounded-xl">
-                <p className="text-sm text-slate-500 mb-1">Telegram</p>
-                <p className="font-semibold text-slate-900">
-                  🔔 Нова заявка
-                </p>
-                <p className="text-sm text-slate-600">
-                  Ім’я: Іван <br />
-                  Телефон: +380...
-                </p>
-              </div>
-
-              {/* CRM */}
-              <div className="bg-slate-50 p-4 rounded-xl">
-                <p className="text-sm text-slate-500 mb-1">CRM</p>
-                <p className="font-semibold text-slate-900">
-                  Лід додано в систему
-                </p>
-                <p className="text-sm text-slate-600">
-                  Статус: Новий
-                </p>
-              </div>
-
-              {/* Reminder */}
-              <div className="bg-green-50 p-4 rounded-xl">
-                <p className="text-sm text-slate-500 mb-1">Нагадування</p>
-                <p className="font-semibold text-slate-900">
-                  ⏰ Ви не відповіли клієнту
-                </p>
-                <p className="text-sm text-slate-600">
-                  через 30 хв
-                </p>
-              </div>
-
-            </div>
-          </motion.div>
-
         </div>
       </div>
     </section>
