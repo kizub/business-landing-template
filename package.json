@@ -5,8 +5,8 @@
   "type": "module",
   "scripts": {
     "dev": "tsx server.ts",
-    "build": "vite build && esbuild server.ts --bundle --platform=node --target=node22 --outfile=dist/server.js --external:better-sqlite3 --external:fsevents",
-    "start": "node dist/server.js",
+    "build": "vite build && esbuild server.ts --bundle --platform=node --target=node22 --format=esm --outfile=server-dist/server.js --external:better-sqlite3 --external:fsevents",
+    "start": "node server-dist/server.js",
     "preview": "vite preview",
     "clean": "rm -rf dist",
     "lint": "tsc --noEmit"
