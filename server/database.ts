@@ -1,21 +1,39 @@
 import Database from 'better-sqlite3';
 import path from 'path';
 import bcrypt from 'bcryptjs';
+import fs from 'fs';
 
 const dbPath = process.env.DATABASE_PATH || path.join(process.cwd(), 'database.sqlite');
-const db = new Database(dbPath);
+
+let db: Database.Database;
+
+try {
+  db = new Database(dbPath);
+} catch (error: any) {
+  if (error.code === 'SQLITE_CORRUPT') {
+    console.error('Database file is malformed. Deleting and recreating...');
+    if (fs.existsSync(dbPath)) {
+      fs.unlinkSync(dbPath);
+    }
+    db = new Database(dbPath);
+  } else {
+    throw error;
+  }
+}
 
 // Initialize tables
 export function initDb() {
-  // Users table
-  db.prepare(`
-    CREATE TABLE IF NOT EXISTS users (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      username TEXT UNIQUE NOT NULL,
-      password TEXT NOT NULL,
-      created_at DATETIME DEFAULT CURRENT_TIMESTAMP
-    )
-  `).run();
+  try {
+    console.log('Initializing database...');
+    // Users table
+    db.prepare(`
+      CREATE TABLE IF NOT EXISTS users (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        username TEXT UNIQUE NOT NULL,
+        password TEXT NOT NULL,
+        created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+      )
+    `).run();
 
   // Site content table (for simple sections)
   db.prepare(`
@@ -114,6 +132,11 @@ export function initDb() {
   }
 
   seedInitialContent();
+    console.log('Database initialization complete.');
+  } catch (error) {
+    console.error('Error during database initialization:', error);
+    throw error;
+  }
 }
 
 function seedInitialContent() {
