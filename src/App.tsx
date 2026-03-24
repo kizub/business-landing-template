@@ -651,7 +651,7 @@ const Pricing = ({ items, onSelectPlan }: { items: any[], onSelectPlan: (p: any)
                 </div>
               )}
               <div className="mb-8">
-                <span className="text-sm font-bold text-accent uppercase tracking-widest">{"ДЛЯ ШВИДКОГО СТАРТУ"}</span>
+                <span className="text-sm font-bold text-accent uppercase tracking-widest">{plan.label}</span>
                 <div className="flex items-baseline gap-1 mt-2">
                   <h3 className="text-4xl font-extrabold">{plan.price}</h3>
                   <span className="text-slate-400 font-medium">/ проєкт</span>
