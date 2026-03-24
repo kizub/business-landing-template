@@ -113,54 +113,43 @@ const Navbar = ({ content }: { content: any }) => {
   );
 };
 
-const Hero = ({ content }: { content: any }) => {
+const Hero = () => {
   return (
     <section className="relative pt-32 pb-20 md:pt-48 md:pb-32 overflow-hidden">
       <div className="container-custom relative z-10">
-        
-        {/* GRID */}
-        <div className="grid md:grid-cols-2 gap-12 items-center">
+        <motion.div 
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.6 }}
+          className="max-w-3xl"
+        >
+          <h1 className="text-4xl sm:text-5xl md:text-7xl font-extrabold text-slate-900 leading-[1.1] mb-8">
+            Ваш сайт або приводить клієнтів — <span className="text-accent">або не працює</span>
+          </h1>
+          <p className="text-xl md:text-2xl text-slate-600 mb-10 leading-relaxed">
+            Я будую системи, які перетворюють трафік у заявки через структуру, тексти і автоматизацію.
+          </p>
+          
+          <div className="flex flex-col sm:flex-row gap-4 mb-12">
+            <a href="#contact" className="btn-primary flex items-center justify-center gap-2">
+              Обговорити проєкт <ArrowRight size={20} />
+            </a>
+            <a href="#audit" className="btn-secondary flex items-center justify-center gap-2">
+              Отримати відео-розбір <Play size={18} />
+            </a>
+          </div>
 
-          {/* LEFT */}
-          <motion.div 
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6 }}
-            className="max-w-3xl"
-          >
-            <h1 className="text-4xl sm:text-5xl md:text-7xl font-extrabold text-slate-900 leading-[1.1] mb-8">
-              {content?.title || 'Будую автономні системи залучення клієнтів'}
-            </h1>
-
-            <p className="text-xl md:text-2xl text-slate-600 mb-10 leading-relaxed">
-              {content?.subtitle || 'Ваш сайт — це не просто картинка, а повноцінний відділ продажів 24/7.'}
-            </p>
-            
-            <div className="flex flex-col sm:flex-row gap-4 mb-12">
-              <a href="#contact" className="btn-primary flex items-center justify-center gap-2">
-                {content?.primaryButtonText || 'Обговорити проєкт'}
-              </a>
-              <a href="#audit" className="btn-secondary flex items-center justify-center gap-2">
-                {content?.secondaryButtonText || 'Отримати відео-розбір'}
-              </a>
+          <div className="flex flex-wrap gap-8">
+            <div className="flex items-center gap-2 text-slate-500">
+              <CheckCircle2 size={18} className="text-accent" />
+              <span className="text-sm font-medium">Відповідаю протягом дня</span>
             </div>
-
-            <div className="flex flex-wrap gap-8">
-              <div className="flex items-center gap-2 text-slate-500">
-                <CheckCircle2 size={18} className="text-accent" />
-                <span className="text-sm font-medium">
-                  {content?.badge1 || 'Відповідаю протягом дня'}
-                </span>
-              </div>
-
-              <div className="flex items-center gap-2 text-slate-500">
-                <CheckCircle2 size={18} className="text-accent" />
-                <span className="text-sm font-medium">
-                  {content?.badge2 || 'Безкоштовний розбір перед стартом'}
-                </span>
-              </div>
+            <div className="flex items-center gap-2 text-slate-500">
+              <CheckCircle2 size={18} className="text-accent" />
+              <span className="text-sm font-medium">Безкоштовний розбір перед стартом</span>
             </div>
-        </div>
+          </div>
+        </motion.div>
       </div>
     </section>
   );
