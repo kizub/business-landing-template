@@ -117,39 +117,99 @@ const Hero = ({ content }: { content: any }) => {
   return (
     <section className="relative pt-32 pb-20 md:pt-48 md:pb-32 overflow-hidden">
       <div className="container-custom relative z-10">
-        <motion.div 
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6 }}
-          className="max-w-3xl"
-        >
-          <h1 className="text-4xl sm:text-5xl md:text-7xl font-extrabold text-slate-900 leading-[1.1] mb-8">
-            {content?.title || 'Будую автономні системи залучення клієнтів'}
-          </h1>
-          <p className="text-xl md:text-2xl text-slate-600 mb-10 leading-relaxed">
-            {content?.subtitle || 'Ваш сайт — це не просто картинка, а повноцінний відділ продажів 24/7.'}
-          </p>
-          
-          <div className="flex flex-col sm:flex-row gap-4 mb-12">
-            <a href="#contact" className="btn-primary flex items-center justify-center gap-2">
-              {content?.primaryButtonText || 'Обговорити проєкт'} <ArrowRight size={20} />
-            </a>
-            <a href="#audit" className="btn-secondary flex items-center justify-center gap-2">
-              {content?.secondaryButtonText || 'Отримати відео-розбір'} <Play size={18} />
-            </a>
-          </div>
+        
+        {/* GRID */}
+        <div className="grid md:grid-cols-2 gap-12 items-center">
 
-          <div className="flex flex-wrap gap-8">
-            <div className="flex items-center gap-2 text-slate-500">
-              <CheckCircle2 size={18} className="text-accent" />
-              <span className="text-sm font-medium">{content?.badge1 || 'Відповідаю протягом дня'}</span>
+          {/* LEFT */}
+          <motion.div 
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6 }}
+            className="max-w-3xl"
+          >
+            <h1 className="text-4xl sm:text-5xl md:text-7xl font-extrabold text-slate-900 leading-[1.1] mb-8">
+              {content?.title || 'Будую автономні системи залучення клієнтів'}
+            </h1>
+
+            <p className="text-xl md:text-2xl text-slate-600 mb-10 leading-relaxed">
+              {content?.subtitle || 'Ваш сайт — це не просто картинка, а повноцінний відділ продажів 24/7.'}
+            </p>
+            
+            <div className="flex flex-col sm:flex-row gap-4 mb-12">
+              <a href="#contact" className="btn-primary flex items-center justify-center gap-2">
+                {content?.primaryButtonText || 'Обговорити проєкт'}
+              </a>
+              <a href="#audit" className="btn-secondary flex items-center justify-center gap-2">
+                {content?.secondaryButtonText || 'Отримати відео-розбір'}
+              </a>
             </div>
-            <div className="flex items-center gap-2 text-slate-500">
-              <CheckCircle2 size={18} className="text-accent" />
-              <span className="text-sm font-medium">{content?.badge2 || 'Безкоштовний розбір перед стартом'}</span>
+
+            <div className="flex flex-wrap gap-8">
+              <div className="flex items-center gap-2 text-slate-500">
+                <CheckCircle2 size={18} className="text-accent" />
+                <span className="text-sm font-medium">
+                  {content?.badge1 || 'Відповідаю протягом дня'}
+                </span>
+              </div>
+
+              <div className="flex items-center gap-2 text-slate-500">
+                <CheckCircle2 size={18} className="text-accent" />
+                <span className="text-sm font-medium">
+                  {content?.badge2 || 'Безкоштовний розбір перед стартом'}
+                </span>
+              </div>
             </div>
-          </div>
-        </motion.div>
+          </motion.div>
+
+
+          {/* RIGHT (МОКАП СИСТЕМИ) */}
+          <motion.div
+            initial={{ opacity: 0, x: 40 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ duration: 0.7 }}
+            className="relative"
+          >
+            <div className="bg-white rounded-2xl shadow-xl p-6 space-y-4 border">
+
+              {/* Telegram */}
+              <div className="bg-blue-50 p-4 rounded-xl">
+                <p className="text-sm text-slate-500 mb-1">Telegram</p>
+                <p className="font-semibold text-slate-900">
+                  🔔 Нова заявка
+                </p>
+                <p className="text-sm text-slate-600">
+                  Ім’я: Іван <br />
+                  Телефон: +380...
+                </p>
+              </div>
+
+              {/* CRM */}
+              <div className="bg-slate-50 p-4 rounded-xl">
+                <p className="text-sm text-slate-500 mb-1">CRM</p>
+                <p className="font-semibold text-slate-900">
+                  Лід додано в систему
+                </p>
+                <p className="text-sm text-slate-600">
+                  Статус: Новий
+                </p>
+              </div>
+
+              {/* Reminder */}
+              <div className="bg-green-50 p-4 rounded-xl">
+                <p className="text-sm text-slate-500 mb-1">Нагадування</p>
+                <p className="font-semibold text-slate-900">
+                  ⏰ Ви не відповіли клієнту
+                </p>
+                <p className="text-sm text-slate-600">
+                  через 30 хв
+                </p>
+              </div>
+
+            </div>
+          </motion.div>
+
+        </div>
       </div>
     </section>
   );
