@@ -39,30 +39,38 @@ async function startServer() {
   // Serve static uploads
   app.use("/uploads", express.static(uploadsDir));
 
-  // API Routes - Ми НЕ навішуємо authenticateToken тут, 
-  // бо всередині цих роутерів є публічні маршрути.
+  // API Routes
   app.use("/api/admin", authRoutes);
   app.use("/api/content", contentRoutes);
   app.use("/api/upload", uploadRoutes);
   app.use("/api/contact", contactRoutes);
 
   // Vite middleware for development
-  if (process.env.NODE_ENV !== "production") {
+  const isProduction = process.env.NODE_ENV === "production" || process.env.RAILWAY_ENVIRONMENT;
+  
+  if (!isProduction) {
+    console.log("Starting in DEVELOPMENT mode with Vite...");
     const vite = await createViteServer({
       server: { middlewareMode: true },
       appType: "spa",
     });
     app.use(vite.middlewares);
   } else {
+    console.log("Starting in PRODUCTION mode...");
     const distPath = path.join(process.cwd(), "dist");
-    app.use(express.static(distPath));
-    app.get("*", (req, res) => {
-      res.sendFile(path.join(distPath, "index.html"));
-    });
+    if (fs.existsSync(distPath)) {
+      app.use(express.static(distPath));
+      app.get("*", (req, res) => {
+        res.sendFile(path.join(distPath, "index.html"));
+      });
+    } else {
+      console.error("DIST directory not found! Did you run 'npm run build'?");
+    }
   }
 
   app.listen(PORT, "0.0.0.0", () => {
-    console.log(`Server running on http://localhost:${PORT}`);
+    console.log(`🚀 Server is pulse-checking on port ${PORT}`);
+    console.log(`Environment: ${isProduction ? 'Production' : 'Development'}`);
   });
 }
 
