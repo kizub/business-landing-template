@@ -20,7 +20,10 @@ import {
   FileText,
   Code,
   Rocket,
-  Loader2
+  Loader2,
+  User,
+  Database,
+  Bell
 } from 'lucide-react';
 import { getContent } from './services/api';
 import Admin from './admin/Admin';
@@ -113,43 +116,188 @@ const Navbar = ({ content }: { content: any }) => {
   );
 };
 
-const Hero = () => {
-  return (
-    <section className="relative pt-32 pb-20 md:pt-48 md:pb-32 overflow-hidden">
-      <div className="container-custom relative z-10">
-        <motion.div 
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6 }}
-          className="max-w-3xl"
-        >
-          <h1 className="text-4xl sm:text-5xl md:text-7xl font-extrabold text-slate-900 leading-[1.1] mb-8">
-            Ваш сайт або приводить клієнтів — <span className="text-accent">або не працює</span>
-          </h1>
-          <p className="text-xl md:text-2xl text-slate-600 mb-10 leading-relaxed">
-            Я будую системи, які перетворюють трафік у заявки через структуру, тексти і автоматизацію.
-          </p>
-          
-          <div className="flex flex-col sm:flex-row gap-4 mb-12">
-            <a href="#contact" className="btn-primary flex items-center justify-center gap-2">
-              Обговорити проєкт <ArrowRight size={20} />
-            </a>
-            <a href="#audit" className="btn-secondary flex items-center justify-center gap-2">
-              Отримати відео-розбір <Play size={18} />
-            </a>
-          </div>
+const Hero = ({ content, onOpenVideo }: { content: any, onOpenVideo: () => void }) => {
+  const smoothTransition = { duration: 0.8, ease: [0.16, 1, 0.3, 1] };
+  
+  // Animation settings for the sequential flow
+  const stepDuration = 1.2; // Total time for one step (fade + flashes)
+  const [animationKey, setAnimationKey] = useState(0);
 
-          <div className="flex flex-wrap gap-8">
-            <div className="flex items-center gap-2 text-slate-500">
-              <CheckCircle2 size={18} className="text-accent" />
-              <span className="text-sm font-medium">Відповідаю протягом дня</span>
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setAnimationKey(prev => prev + 1);
+    }, 7000); // Restart every 7 seconds (4 steps * 1.2s + pause)
+    return () => clearInterval(interval);
+  }, []);
+  
+  return (
+    <section className="relative pt-32 pb-20 md:pt-40 md:pb-24 overflow-hidden">
+      <div className="container-custom relative z-10">
+        <div className="grid lg:grid-cols-[1.2fr_0.8fr] gap-12 items-center">
+          <motion.div 
+            initial={{ opacity: 0, x: -30 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={smoothTransition}
+            className="max-w-2xl"
+          >
+            <h1 className="text-4xl sm:text-5xl md:text-6xl font-extrabold text-slate-900 leading-[1.1] mb-6">
+              {content?.title || 'Будую автономні системи залучення клієнтів'}
+            </h1>
+            <p className="text-lg md:text-xl text-slate-600 mb-8 leading-relaxed max-w-xl">
+              {content?.subtitle || 'Ваш сайт — це не просто картинка, а повноцінний відділ продажів 24/7.'}
+            </p>
+            
+            <div className="flex flex-col sm:flex-row gap-4 mb-10">
+              <motion.a 
+                whileHover={{ scale: 1.02 }}
+                whileTap={{ scale: 0.98 }}
+                href="#contact" 
+                className="btn-primary flex items-center justify-center gap-2 py-3.5 px-8"
+              >
+                {content?.primaryButtonText || 'Обговорити проєкт'} <ArrowRight size={20} />
+              </motion.a>
+              <motion.a 
+                whileHover={{ scale: 1.02 }}
+                whileTap={{ scale: 0.98 }}
+                href="#audit" 
+                className="btn-secondary flex items-center justify-center gap-2 py-3.5 px-8"
+              >
+                {content?.secondaryButtonText || 'Отримати відео-розбір'} <Play size={18} />
+              </motion.a>
             </div>
-            <div className="flex items-center gap-2 text-slate-500">
-              <CheckCircle2 size={18} className="text-accent" />
-              <span className="text-sm font-medium">Безкоштовний розбір перед стартом</span>
+
+            <div className="flex flex-wrap gap-6">
+              {[
+                { text: content?.badge1 || 'Відповідаю протягом дня' },
+                { text: content?.badge2 || 'Безкоштовний розбір перед стартом' }
+              ].map((badge, i) => (
+                <motion.div 
+                  key={i}
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ ...smoothTransition, delay: 0.4 + (i * 0.1) }}
+                  className="flex items-center gap-2 text-slate-500"
+                >
+                  <CheckCircle2 size={18} className="text-accent" />
+                  <span className="text-sm font-medium">{badge.text}</span>
+                </motion.div>
+              ))}
             </div>
+          </motion.div>
+
+          {/* Visual Flow Column - Static Container with Looping Sequential Animation */}
+          <div className="relative mt-16 lg:mt-0">
+            <div className="bg-slate-50 rounded-[40px] p-8 border border-slate-100 relative overflow-hidden max-w-md mx-auto lg:ml-auto shadow-sm">
+              {/* Background Glow */}
+              <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-48 h-48 bg-accent/5 blur-[80px] rounded-full" />
+              
+              <div key={animationKey} className="relative space-y-8">
+                {[
+                  { icon: <User size={24} />, label: content?.flowLabel1 || 'Крок 01', title: content?.flowLead || 'Заявка' },
+                  { icon: <Send size={24} />, label: content?.flowLabel2 || 'Крок 02', title: content?.flowTelegram || 'Telegram' },
+                  { icon: <Database size={24} />, label: content?.flowLabel3 || 'Крок 03', title: content?.flowCRM || 'CRM' },
+                  { icon: <Bell size={24} />, label: content?.flowLabel4 || 'Крок 04', title: content?.flowReminder || 'Нагадування' }
+                ].map((step, i, arr) => {
+                  const baseDelay = 0.5 + (i * stepDuration);
+                  
+                  return (
+                    <React.Fragment key={i}>
+                      <div className="relative">
+                        {/* Step Container Fades In */}
+                        <motion.div 
+                          initial={{ opacity: 0 }}
+                          animate={{ opacity: 1 }}
+                          transition={{ duration: 0.4, delay: baseDelay }}
+                          className="flex items-center justify-between group"
+                        >
+                          <div className="flex items-center gap-4">
+                            {/* Icon with Subtle Flicker Animation */}
+                            <motion.div 
+                              initial={{ backgroundColor: "#ffffff", scale: 1, boxShadow: "0 1px 2px 0 rgba(0, 0, 0, 0.05)" }}
+                              animate={{ 
+                                backgroundColor: [
+                                  "#ffffff", 
+                                  "#3b82f6", // Flash 1 (Blue)
+                                  "#ffffff", 
+                                  "#3b82f6", // Flash 2 (Blue)
+                                  "#ffffff"  // Final state
+                                ],
+                                scale: [1, 1.05, 1, 1.05, 1],
+                                boxShadow: [
+                                  "0 1px 2px 0 rgba(0, 0, 0, 0.05)",
+                                  "0 4px 6px -1px rgba(59, 130, 246, 0.3)",
+                                  "0 1px 2px 0 rgba(0, 0, 0, 0.05)",
+                                  "0 4px 6px -1px rgba(59, 130, 246, 0.3)",
+                                  "0 1px 2px 0 rgba(0, 0, 0, 0.05)"
+                                ]
+                              }}
+                              transition={{ 
+                                duration: 0.8, 
+                                delay: baseDelay + 0.4,
+                                times: [0, 0.25, 0.5, 0.75, 1]
+                              }}
+                              className="w-12 h-12 rounded-xl border border-slate-100 flex items-center justify-center text-accent"
+                            >
+                              {step.icon}
+                            </motion.div>
+
+                            <div>
+                              <div className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-0.5">{step.label}</div>
+                              <div className="text-lg font-bold text-slate-900">{step.title}</div>
+                            </div>
+                          </div>
+
+                          {/* Completion Checkmark */}
+                          <motion.div
+                            initial={{ opacity: 0, scale: 0.5 }}
+                            animate={{ opacity: 1, scale: 1 }}
+                            transition={{ 
+                              type: "spring",
+                              stiffness: 300,
+                              damping: 20,
+                              delay: baseDelay + 1.0 
+                            }}
+                            className="text-green-500"
+                          >
+                            <CheckCircle2 size={20} />
+                          </motion.div>
+                        </motion.div>
+
+                        {/* Arrow between steps - Fades in after the step flashes and checkmark appears */}
+                        {i < arr.length - 1 && (
+                          <motion.div 
+                            initial={{ opacity: 0 }}
+                            animate={{ opacity: 1 }}
+                            transition={{ duration: 0.4, delay: baseDelay + stepDuration - 0.1 }}
+                            className="ml-6 h-8 w-px bg-gradient-to-b from-accent/40 to-transparent" 
+                          />
+                        )}
+                      </div>
+                    </React.Fragment>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* Learn More Button - Moved Outside Block */}
+            <motion.div 
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 5.5, duration: 0.6 }}
+              className="mt-8 text-center"
+            >
+              <button 
+                onClick={onOpenVideo}
+                className="inline-flex items-center gap-3 text-slate-900 font-bold hover:text-accent transition-all group"
+              >
+                <div className="w-12 h-12 rounded-full bg-white shadow-sm border border-slate-100 flex items-center justify-center group-hover:bg-accent group-hover:text-white group-hover:border-accent transition-all">
+                  <Play size={18} fill="currentColor" />
+                </div>
+                <span className="text-lg">{content?.moreButtonText || 'Докладніше про систему'}</span>
+              </button>
+            </motion.div>
           </div>
-        </motion.div>
+        </div>
       </div>
     </section>
   );
@@ -645,7 +793,7 @@ const Pricing = ({ items, onSelectPlan }: { items: any[], onSelectPlan: (p: any)
                   : 'bg-slate-800/50 border-white/5'
               }`}
             >
-              {!!plan.featured && (
+              {plan.featured && (
                 <div className="absolute -top-4 left-1/2 -translate-x-1/2 bg-accent text-white text-xs font-bold uppercase tracking-widest px-4 py-1 rounded-full">
                   Популярно
                 </div>
@@ -862,6 +1010,36 @@ const CTA = ({ content }: { content: any }) => {
 };
 
 const Contacts = ({ content }: { content: any }) => {
+  const [formData, setFormData] = useState({ name: '', contact: '', message: '' });
+  const [status, setStatus] = useState<'idle' | 'loading' | 'success' | 'error'>('idle');
+  const [responseMsg, setResponseMsg] = useState('');
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!formData.name || !formData.contact) return;
+    
+    setStatus('loading');
+    try {
+      const response = await fetch('/api/contact', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(formData)
+      });
+      const result = await response.json();
+      if (response.ok) {
+        setStatus('success');
+        setResponseMsg(result.message);
+        setFormData({ name: '', contact: '', message: '' });
+      } else {
+        setStatus('error');
+        setResponseMsg(result.message || 'Помилка при відправці');
+      }
+    } catch (err) {
+      setStatus('error');
+      setResponseMsg('Помилка мережі. Спробуйте пізніше.');
+    }
+  };
+
   return (
     <section id="contact" className="section-padding bg-white">
       <div className="container-custom">
@@ -869,83 +1047,106 @@ const Contacts = ({ content }: { content: any }) => {
           <div>
             <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold text-slate-900 mb-8">{content?.title}</h2>
             <p className="text-xl text-slate-600 mb-12">{content?.subtitle}</p>
-
             <div className="space-y-8">
-              <div className="flex items-center gap-6">
-                <div className="w-14 h-14 bg-slate-50 rounded-2xl flex items-center justify-center text-accent">
+              <div className="flex items-center gap-6 group">
+                <div className="w-14 h-14 bg-slate-50 rounded-2xl flex items-center justify-center text-accent group-hover:bg-accent group-hover:text-white transition-all duration-300">
                   <Mail size={24} />
                 </div>
                 <div>
                   <div className="text-sm font-bold text-slate-400 uppercase tracking-widest mb-1">Email</div>
-                  <a
-                    href="mailto:kizub888@gmail.com"
-                    className="text-xl font-bold text-slate-900 hover:text-accent transition no-underline"
+                  <a 
+                    href={`mailto:${content?.email}`} 
+                    className="text-xl font-bold text-slate-900 hover:text-accent transition-colors no-underline"
                   >
-                    kizub888@gmail.com
+                    {content?.email}
                   </a>
                 </div>
               </div>
-
-              {/* TELEGRAM */}
-<div className="flex items-start gap-6">
-  <div className="w-14 h-14 bg-slate-50 rounded-2xl flex items-center justify-center text-accent shrink-0">
-    <Send size={24} />
-  </div>
-
-  <div className="flex-1">
-    <div className="text-sm font-bold text-slate-400 uppercase tracking-widest mb-1">
-      Telegram
-    </div>
-
-    <a
-      href="https://t.me/Kizub_BRB"
-      target="_blank"
-      rel="noopener noreferrer"
-      className="text-xl font-bold text-slate-900 hover:text-accent transition no-underline"
-    >
-      @Kizub_BRB
-    </a>
-  </div>
-</div>
-
-
-              
+              <div className="flex items-center gap-6 group">
+                <div className="w-14 h-14 bg-slate-50 rounded-2xl flex items-center justify-center text-accent group-hover:bg-accent group-hover:text-white transition-all duration-300">
+                  <Send size={24} />
+                </div>
+                <div>
+                  <div className="text-sm font-bold text-slate-400 uppercase tracking-widest mb-1">Telegram</div>
+                  <a 
+                    href={`https://t.me/${content?.telegram?.replace('@', '')}`} 
+                    target="_blank" 
+                    rel="noopener noreferrer"
+                    className="text-xl font-bold text-slate-900 hover:text-accent transition-colors no-underline"
+                  >
+                    {content?.telegram}
+                  </a>
+                </div>
+              </div>
             </div>
           </div>
-
           <div className="bg-slate-50 p-8 md:p-12 rounded-[40px] border border-slate-100">
-            <form className="space-y-6">
-              <div>
-                <label className="block text-sm font-bold text-slate-900 uppercase tracking-wider mb-2">
-                  {content?.formNameLabel}
-                </label>
-                <input
-                  type="text"
-                  className="w-full px-6 py-4 rounded-2xl bg-white border border-slate-200 focus:border-accent outline-none"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-bold text-slate-900 uppercase tracking-wider mb-2">
-                  {content?.formContactLabel}
-                </label>
-                <input
-                  type="text"
-                  className="w-full px-6 py-4 rounded-2xl bg-white border border-slate-200 focus:border-accent outline-none"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-bold text-slate-900 uppercase tracking-wider mb-2">
-                  {content?.formMessageLabel}
-                </label>
-                <textarea
-                  rows={4}
-                  className="w-full px-6 py-4 rounded-2xl bg-white border border-slate-200 focus:border-accent outline-none resize-none"
-                ></textarea>
-              </div>
-              <button className="btn-primary w-full py-5 text-lg">
-                {content?.formButtonText}
-              </button>
-            </form>
+            {status === 'success' ? (
+              <motion.div 
+                initial={{ opacity: 0, scale: 0.9 }}
+                animate={{ opacity: 1, scale: 1 }}
+                className="h-full flex flex-col items-center justify-center text-center py-12"
+              >
+                <div className="w-20 h-20 bg-green-100 text-green-600 rounded-full flex items-center justify-center mb-6">
+                  <CheckCircle2 size={40} />
+                </div>
+                <h3 className="text-2xl font-bold text-slate-900 mb-4">Дякую!</h3>
+                <p className="text-slate-600 mb-8">{responseMsg}</p>
+                <button 
+                  onClick={() => setStatus('idle')}
+                  className="text-accent font-bold hover:underline"
+                >
+                  Надіслати ще одну заявку
+                </button>
+              </motion.div>
+            ) : (
+              <form onSubmit={handleSubmit} className="space-y-6">
+                <div>
+                  <label className="block text-sm font-bold text-slate-900 uppercase tracking-wider mb-2">{content?.formNameLabel}</label>
+                  <input 
+                    required
+                    type="text" 
+                    value={formData.name}
+                    onChange={(e) => setFormData({...formData, name: e.target.value})}
+                    className="w-full px-6 py-4 rounded-2xl bg-white border border-slate-200 focus:border-accent outline-none" 
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-bold text-slate-900 uppercase tracking-wider mb-2">{content?.formContactLabel}</label>
+                  <input 
+                    required
+                    type="text" 
+                    value={formData.contact}
+                    onChange={(e) => setFormData({...formData, contact: e.target.value})}
+                    className="w-full px-6 py-4 rounded-2xl bg-white border border-slate-200 focus:border-accent outline-none" 
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-bold text-slate-900 uppercase tracking-wider mb-2">{content?.formMessageLabel}</label>
+                  <textarea 
+                    rows={4} 
+                    value={formData.message}
+                    onChange={(e) => setFormData({...formData, message: e.target.value})}
+                    className="w-full px-6 py-4 rounded-2xl bg-white border border-slate-200 focus:border-accent outline-none resize-none"
+                  ></textarea>
+                </div>
+                {status === 'error' && (
+                  <div className="text-red-500 text-sm font-medium flex items-center gap-2">
+                    <AlertCircle size={16} /> {responseMsg}
+                  </div>
+                )}
+                <button 
+                  disabled={status === 'loading'}
+                  className="btn-primary w-full py-5 text-lg flex items-center justify-center gap-3 disabled:opacity-70"
+                >
+                  {status === 'loading' ? (
+                    <>
+                      <Loader2 className="animate-spin" size={20} /> Відправка...
+                    </>
+                  ) : content?.formButtonText}
+                </button>
+              </form>
+            )}
           </div>
         </div>
       </div>
@@ -972,11 +1173,65 @@ const Footer = ({ content }: { content: any }) => {
 
 // --- Main App Component ---
 
+const VideoModal = ({ isOpen, onClose, videoUrl }: { isOpen: boolean, onClose: () => void, videoUrl: string }) => {
+  if (!isOpen) return null;
+
+  return (
+    <motion.div
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+      className="fixed inset-0 z-[100] flex items-center justify-center p-4 md:p-8 bg-slate-900/90 backdrop-blur-sm"
+      onClick={onClose}
+    >
+      <motion.div
+        initial={{ scale: 0.9, opacity: 0 }}
+        animate={{ scale: 1, opacity: 1 }}
+        exit={{ scale: 0.9, opacity: 0 }}
+        className="relative w-full max-w-5xl aspect-video bg-black rounded-3xl overflow-hidden shadow-2xl"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <button 
+          onClick={onClose}
+          className="absolute top-4 right-4 z-10 w-10 h-10 bg-white/10 hover:bg-white/20 text-white rounded-full flex items-center justify-center backdrop-blur-md transition-colors"
+        >
+          <X size={24} />
+        </button>
+        
+        {videoUrl ? (
+          videoUrl.includes('youtube.com') || videoUrl.includes('youtu.be') || videoUrl.includes('vimeo.com') ? (
+            <iframe
+              src={videoUrl.includes('youtube.com') || videoUrl.includes('youtu.be') 
+                ? videoUrl.replace('watch?v=', 'embed/').replace('youtu.be/', 'youtube.com/embed/') 
+                : videoUrl}
+              className="w-full h-full"
+              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+              allowFullScreen
+            ></iframe>
+          ) : (
+            <video 
+              src={videoUrl} 
+              className="w-full h-full" 
+              controls 
+              autoPlay
+            ></video>
+          )
+        ) : (
+          <div className="w-full h-full flex items-center justify-center text-white/50">
+            Відео скоро з'явиться
+          </div>
+        )}
+      </motion.div>
+    </motion.div>
+  );
+};
+
 const PublicSite = () => {
   const [data, setData] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [selectedCase, setSelectedCase] = useState<any>(null);
   const [selectedPlan, setSelectedPlan] = useState<any>(null);
+  const [isVideoModalOpen, setIsVideoModalOpen] = useState(false);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -1015,7 +1270,10 @@ const PublicSite = () => {
   return (
     <div className="min-h-screen bg-white">
       <Navbar content={data.content.hero || {}} />
-      <Hero content={data.content.hero || {}} />
+      <Hero 
+        content={data.content.hero || {}} 
+        onOpenVideo={() => setIsVideoModalOpen(true)}
+      />
       <Problem items={data.problems || []} />
       <Solution items={data.benefits || []} />
       <SpeedSection content={data.content.speed_roi || {}} />
@@ -1045,6 +1303,11 @@ const PublicSite = () => {
             contactContent={data.content.contacts}
           />
         )}
+        <VideoModal 
+          isOpen={isVideoModalOpen} 
+          onClose={() => setIsVideoModalOpen(false)} 
+          videoUrl={data.content.hero?.videoUrl || ''} 
+        />
       </AnimatePresence>
     </div>
   );
@@ -1054,7 +1317,7 @@ const App = () => {
   return (
     <Router>
       <Routes>
-        <Route path="/admin" element={<Admin />} />
+        <Route path="/admin/*" element={<Admin />} />
         <Route path="/" element={<PublicSite />} />
       </Routes>
     </Router>

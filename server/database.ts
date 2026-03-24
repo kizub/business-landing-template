@@ -2,7 +2,7 @@ import Database from 'better-sqlite3';
 import path from 'path';
 import bcrypt from 'bcryptjs';
 
-const dbPath = path.join(process.cwd(), 'database.sqlite');
+const dbPath = process.env.DATABASE_PATH || path.join(process.cwd(), 'database.sqlite');
 const db = new Database(dbPath);
 
 // Initialize tables
@@ -127,7 +127,17 @@ function seedInitialContent() {
         primaryButtonText: 'Обговорити проєкт',
         secondaryButtonText: 'Отримати відео-розбір',
         badge1: 'Відповідаю протягом дня',
-        badge2: 'Безкоштовний розбір перед стартом'
+        badge2: 'Безкоштовний розбір перед стартом',
+        flowLead: 'Заявка',
+        flowLabel1: 'Крок 01',
+        flowTelegram: 'Telegram',
+        flowLabel2: 'Крок 02',
+        flowCRM: 'CRM',
+        flowLabel3: 'Крок 03',
+        flowReminder: 'Нагадування',
+        flowLabel4: 'Крок 04',
+        moreButtonText: 'Докладніше про систему',
+        videoUrl: 'https://www.youtube.com/watch?v=dQw4w9WgXcQ'
       }
     },
     {
@@ -158,8 +168,8 @@ function seedInitialContent() {
       content: {
         title: 'Готові побудувати систему?',
         subtitle: 'Напишіть мені, і ми обговоримо ваш проєкт вже сьогодні.',
-        email: 'hello@romandev.com',
-        telegram: '@roman_system_dev',
+        email: 'kizub888@gmail.com',
+        telegram: '@Kizub_BRB',
         formNameLabel: 'Ім’я',
         formContactLabel: 'Телефон / Email',
         formMessageLabel: 'Повідомлення',
@@ -170,7 +180,7 @@ function seedInitialContent() {
       key: 'footer',
       content: {
         copyright: '© 2026 Roman Dev. Всі права захищені.',
-        telegramLink: 'https://t.me/roman_system_dev'
+        telegramLink: 'https://t.me/Kizub_BRB'
       }
     },
     {

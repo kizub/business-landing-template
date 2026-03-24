@@ -26,9 +26,9 @@ export const deleteCase = (id: number) => api.delete(`/content/cases/${id}`);
 export const createFaq = (data: any) => api.post('/content/faq', data);
 export const deleteFaq = (id: number) => api.delete(`/content/faq/${id}`);
 
-export const uploadImage = (file: File) => {
+export const uploadFile = (file: File) => {
   const formData = new FormData();
-  formData.append('image', file);
+  formData.append('file', file);
   return api.post('/upload', formData, {
     headers: {
       'Content-Type': 'multipart/form-data',

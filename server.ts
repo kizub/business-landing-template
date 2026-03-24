@@ -11,39 +11,40 @@ import fs from "fs";
 import authRoutes from "./server/routes/auth.js";
 import contentRoutes from "./server/routes/content.js";
 import uploadRoutes from "./server/routes/uploads.js";
+import contactRoutes from "./server/routes/contact.js";
 
 dotenv.config();
 
 async function startServer() {
   const app = express();
-  const PORT = process.env.PORT || 3000;
+  const PORT = 3000;
 
   // Init Database
   initDb();
 
   // Ensure uploads directory exists
-  const uploadsDir = path.join(process.cwd(), "uploads");
+  const uploadsDir = process.env.UPLOADS_PATH || path.join(process.cwd(), "uploads");
   if (!fs.existsSync(uploadsDir)) {
-    fs.mkdirSync(uploadsDir);
+    fs.mkdirSync(uploadsDir, { recursive: true });
   }
 
   // Middleware
   app.use(express.json());
   app.use(cookieParser());
-  app.use(
-    cors({
-      origin: true,
-      credentials: true,
-    })
-  );
+  app.use(cors({
+    origin: true,
+    credentials: true
+  }));
 
   // Serve static uploads
   app.use("/uploads", express.static(uploadsDir));
 
-  // API Routes
+  // API Routes - Ми НЕ навішуємо authenticateToken тут, 
+  // бо всередині цих роутерів є публічні маршрути.
   app.use("/api/admin", authRoutes);
   app.use("/api/content", contentRoutes);
   app.use("/api/upload", uploadRoutes);
+  app.use("/api/contact", contactRoutes);
 
   // Vite middleware for development
   if (process.env.NODE_ENV !== "production") {
@@ -55,13 +56,13 @@ async function startServer() {
   } else {
     const distPath = path.join(process.cwd(), "dist");
     app.use(express.static(distPath));
-    app.get("*", (_req, res) => {
+    app.get("*", (req, res) => {
       res.sendFile(path.join(distPath, "index.html"));
     });
   }
 
-  app.listen(Number(PORT), "0.0.0.0", () => {
-    console.log(`Server running on port ${PORT}`);
+  app.listen(PORT, "0.0.0.0", () => {
+    console.log(`Server running on http://localhost:${PORT}`);
   });
 }
 

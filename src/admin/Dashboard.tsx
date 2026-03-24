@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { logout, getContent, updateSection, updateCase, createCase, deleteCase, updatePricing, updateProcess, updateProblem, updateBenefit, updateFaq, createFaq, deleteFaq, uploadImage } from '../services/api';
+import { logout, getContent, updateSection, updateCase, createCase, deleteCase, updatePricing, updateProcess, updateProblem, updateBenefit, updateFaq, createFaq, deleteFaq, uploadFile } from '../services/api';
 import { 
   Layout, 
   LogOut, 
@@ -21,7 +21,8 @@ import {
   MessageSquare,
   Phone,
   Home,
-  Monitor
+  Monitor,
+  Play
 } from 'lucide-react';
 
 interface DashboardProps {
@@ -142,12 +143,12 @@ const Dashboard: React.FC<DashboardProps> = ({ onLogout }) => {
     }
   };
 
-  const handleImageUpload = async (file: File) => {
+  const handleFileUpload = async (file: File) => {
     try {
-      const response = await uploadImage(file);
-      return response.data.imageUrl;
+      const response = await uploadFile(file);
+      return response.data.url;
     } catch (err) {
-      showMessage('Помилка завантаження фото', 'error');
+      showMessage('Помилка завантаження файлу', 'error');
       return null;
     }
   };
@@ -224,6 +225,7 @@ const Dashboard: React.FC<DashboardProps> = ({ onLogout }) => {
               <HeroEditor 
                 content={data.content.hero} 
                 onSave={(content) => handleSaveSection('hero', content)} 
+                onUpload={handleFileUpload}
                 saving={saving} 
               />
             )}
@@ -231,7 +233,7 @@ const Dashboard: React.FC<DashboardProps> = ({ onLogout }) => {
               <AboutEditor 
                 content={data.content.about} 
                 onSave={(content) => handleSaveSection('about', content)} 
-                onUpload={handleImageUpload}
+                onUpload={handleFileUpload}
                 saving={saving} 
               />
             )}
@@ -260,7 +262,7 @@ const Dashboard: React.FC<DashboardProps> = ({ onLogout }) => {
               <SEOEditor 
                 content={data.content.seo} 
                 onSave={(content) => handleSaveSection('seo', content)} 
-                onUpload={handleImageUpload}
+                onUpload={handleFileUpload}
                 saving={saving} 
               />
             )}
@@ -277,7 +279,7 @@ const Dashboard: React.FC<DashboardProps> = ({ onLogout }) => {
                 onSave={(id, data) => handleSaveEntity('cases', id, data)} 
                 onCreate={(data) => handleCreateEntity('cases', data)}
                 onDelete={(id) => handleDeleteEntity('cases', id)}
-                onUpload={handleImageUpload}
+                onUpload={handleFileUpload}
                 saving={saving} 
               />
             )}
@@ -327,7 +329,7 @@ const Dashboard: React.FC<DashboardProps> = ({ onLogout }) => {
 
 // --- Sub-Editors ---
 
-const HeroEditor = ({ content, onSave, saving }: any) => {
+const HeroEditor = ({ content, onSave, onUpload, saving }: any) => {
   const [form, setForm] = useState(content);
   return (
     <div className="space-y-6">
@@ -340,6 +342,31 @@ const HeroEditor = ({ content, onSave, saving }: any) => {
       <div className="grid grid-cols-2 gap-6">
         <Input label="Бейдж 1" value={form.badge1} onChange={(v) => setForm({...form, badge1: v})} />
         <Input label="Бейдж 2" value={form.badge2} onChange={(v) => setForm({...form, badge2: v})} />
+      </div>
+      <div className="border-t border-slate-100 pt-6">
+        <h4 className="text-sm font-bold text-slate-900 mb-4 uppercase tracking-wider">Візуальний потік (Hero Visual)</h4>
+        <div className="space-y-4">
+          <div className="grid grid-cols-2 gap-4">
+            <Input label="Крок 1: Лейбл" value={form.flowLabel1} onChange={(v) => setForm({...form, flowLabel1: v})} />
+            <Input label="Крок 1: Назва" value={form.flowLead} onChange={(v) => setForm({...form, flowLead: v})} />
+          </div>
+          <div className="grid grid-cols-2 gap-4">
+            <Input label="Крок 2: Лейбл" value={form.flowLabel2} onChange={(v) => setForm({...form, flowLabel2: v})} />
+            <Input label="Крок 2: Назва" value={form.flowTelegram} onChange={(v) => setForm({...form, flowTelegram: v})} />
+          </div>
+          <div className="grid grid-cols-2 gap-4">
+            <Input label="Крок 3: Лейбл" value={form.flowLabel3} onChange={(v) => setForm({...form, flowLabel3: v})} />
+            <Input label="Крок 3: Назва" value={form.flowCRM} onChange={(v) => setForm({...form, flowCRM: v})} />
+          </div>
+          <div className="grid grid-cols-2 gap-4">
+            <Input label="Крок 4: Лейбл" value={form.flowLabel4} onChange={(v) => setForm({...form, flowLabel4: v})} />
+            <Input label="Крок 4: Назва" value={form.flowReminder} onChange={(v) => setForm({...form, flowReminder: v})} />
+          </div>
+        </div>
+        <div className="grid grid-cols-2 gap-6 mt-6 border-t border-slate-50 pt-6">
+          <Input label="Текст кнопки 'Докладніше'" value={form.moreButtonText} onChange={(v) => setForm({...form, moreButtonText: v})} />
+          <VideoPicker label="Відео (YouTube або файл)" value={form.videoUrl} onChange={(v) => setForm({...form, videoUrl: v})} onUpload={onUpload} />
+        </div>
       </div>
       <SaveButton onClick={() => onSave(form)} loading={saving} />
     </div>
@@ -747,6 +774,41 @@ const ImagePicker = ({ label, value, onChange, onUpload }: any) => {
         <div className="flex-grow">
           <Input label="URL зображення" value={value} onChange={onChange} />
           <p className="text-xs text-slate-400 mt-2">Можна вставити посилання або завантажити файл</p>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+const VideoPicker = ({ label, value, onChange, onUpload }: any) => {
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files[0]) {
+      const url = await onUpload(e.target.files[0]);
+      if (url) onChange(url);
+    }
+  };
+
+  return (
+    <div>
+      <label className="block text-sm font-bold text-slate-700 uppercase tracking-wider mb-2">{label}</label>
+      <div className="flex items-start gap-4">
+        <div className="w-32 h-32 bg-slate-100 rounded-xl overflow-hidden border border-slate-200 flex items-center justify-center relative group">
+          {value && !value.includes('youtube.com') && !value.includes('youtu.be') ? (
+            <video src={value} className="w-full h-full object-cover" />
+          ) : (
+            <div className="flex flex-col items-center gap-1 text-slate-400">
+              <Play size={32} />
+              <span className="text-[10px] font-bold uppercase">Video</span>
+            </div>
+          )}
+          <label className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center cursor-pointer">
+            <Plus className="text-white" size={24} />
+            <input type="file" className="hidden" onChange={handleFileChange} accept="video/*" />
+          </label>
+        </div>
+        <div className="flex-grow">
+          <Input label="URL відео" value={value} onChange={onChange} />
+          <p className="text-xs text-slate-400 mt-2">YouTube посилання або завантаження файлу (до 50MB)</p>
         </div>
       </div>
     </div>
