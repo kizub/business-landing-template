@@ -1015,30 +1015,31 @@ const Contacts = ({ content }: { content: any }) => {
   const [responseMsg, setResponseMsg] = useState('');
 
   const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!formData.name || !formData.contact) return;
-    
-    setStatus('loading');
-    try {
-      const response = await fetch('/api/contact', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(formData)
-      });
-      const result = await response.json();
-      if (response.ok) {
-        setStatus('success');
-        setResponseMsg(result.message);
-        setFormData({ name: '', contact: '', message: '' });
-      } else {
-        setStatus('error');
-        setResponseMsg(result.message || 'Помилка при відправці');
-      }
-    } catch (err) {
-      setStatus('error');
-      setResponseMsg('Помилка мережі. Спробуйте пізніше.');
-    }
-  };
+  e.preventDefault();
+  if (!formData.name || !formData.contact) return;
+  setStatus('loading');
+  try {
+    const response = await fetch("https://hook.eu1.make.com/hc37q6huxwanpkovgw5xdk4clw7dxsbp", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({
+        name: formData.name,
+        contact: formData.contact,
+        comment: formData.message,
+        source: "portfolio_site"
+      })
+    });
+    const result = await response.text();
+    setStatus('success');
+    setResponseMsg("Заявка відправлена");
+    setFormData({ name: '', contact: '', message: '' });
+  } catch (err) {
+    setStatus('error');
+    setResponseMsg("Помилка при відправці");
+  }
+};
 
   return (
     <section id="contact" className="section-padding bg-white">
