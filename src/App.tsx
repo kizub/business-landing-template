@@ -920,7 +920,7 @@ const Pricing = ({ items, onSelectPlan, content }: { items: any[], onSelectPlan:
               </ul>
               <div className="pt-8 border-t border-white/10 mt-auto">
                 <p className="text-sm font-semibold text-white mb-6 min-h-[40px]">
-                  <span className="text-accent">{content?.resultLabel || 'Результат:'}</span> {plan.result}
+                  <span className="text-accent">{content?.resultLabel || 'Результат:'}</span> {plan.result_text}
                 </p>
                 <button 
                   onClick={() => onSelectPlan(plan)}
