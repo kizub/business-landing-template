@@ -145,12 +145,12 @@ function seedInitialContent() {
     {
       key: 'hero',
       content: {
-        title: 'Будую автономні системи залучення клієнтів з фокусом на ROI',
-        subtitle: 'Ваш сайт — це не просто картинка, а повноцінний відділ продажів 24/7 з миттєвою автоматизацією в Telegram та CRM.',
-        primaryButtonText: 'Обговорити проєкт',
+        title: 'Будую автономні системи , які перетворюють трафік  у гроші',
+        subtitle: 'Ви вже платите за рекламу. Ви вже отримуєте переходи на сайт. Але питання не в трафіку. Питання в тому, що відбувається після кліку.\n\nУ більшості випадків сайт:\n— не пояснює цінність\n— не веде до дії\n— не обробляє заявку\n— і просто “зливає” потенційного клієнта\n\nЯ створюю системи, які працюють інакше.\n\nЦе не просто сайт. Це повноцінна система, яка:\n— приймає заявки\n— одразу надсилає їх у Telegram\n— зберігає всі контакти в базі\n— нагадує вам про клієнта, якщо ви не відповіли\n— і допомагає довести його до продажу\n\nПлюс: ви отримуєте окрему адмін-панель, де можете самостійно змінювати тексти, фото, відео і блоки без участі розробника.',
+        primaryButtonText: 'Обговорити проект',
         secondaryButtonText: 'Отримати відео-розбір',
-        badge1: 'Відповідаю протягом дня',
-        badge2: 'Безкоштовний розбір перед стартом',
+        badge1: '✔ Відповідаю протягом 15 хвилин',
+        badge2: '✔ Безкоштовний розбір перед стартом',
         flowLead: 'Заявка',
         flowLabel1: 'Крок 01',
         flowTelegram: 'Telegram',
@@ -160,37 +160,39 @@ function seedInitialContent() {
         flowReminder: 'Нагадування',
         flowLabel4: 'Крок 04',
         moreButtonText: 'Докладніше про систему',
-        videoUrl: 'https://www.youtube.com/watch?v=dQw4w9WgXcQ'
+        videoUrl: 'https://www.youtube.com/watch?v=dQw4w9WgXcQ',
+        readMoreLabel: 'докладніше',
+        collapseLabel: 'згорнути'
       }
     },
     {
       key: 'about',
       content: {
-        title: 'Я — архітектор систем, які приносять прибуток',
+        title: 'Я створюю системи, а не просто сайти',
         paragraphs: [
-          'Мене звати Роман. Я не просто створюю сайти, я розробляю інструменти для масштабування бізнесу. Мій підхід базується на трьох китах: маркетингова стратегія, технічна досконалість та глибока автоматизація.',
-          'Замість того, щоб просто "зробити гарно", я фокусуюсь на тому, як кожна секунда перебування користувача на сайті конвертується в реальні гроші для вашого бізнесу.',
-          'Працюю з проєктами будь-якої складності — від лаконічних лендінгів до складних екосистем з інтеграціями CRM, платіжних систем та кастомних ботів.'
+          'Мене звати Роман. Я займаюсь не дизайном заради дизайну, а створенням інструментів, які реально впливають на прибуток бізнесу.',
+          'Мій підхід базується на трьох речах: маркетинг, логіка поведінки клієнта, автоматизація. Кожен сайт, який я роблю, має одну задачу — перетворювати відвідувачів у клієнтів.'
         ],
-        image: 'https://picsum.photos/seed/developer/800/1000',
+        image: 'https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?fit=crop&w=800&h=1000',
         experienceValue: '5+',
         experienceLabel: 'Років досвіду',
-        skills: ['React', 'TypeScript', 'Node.js', 'Framer Motion', 'Tailwind CSS', 'JavaScript', 'HTML', 'CSS', 'Webflow', 'CRM Integration']
+        skills: ['React', 'TypeScript', 'Node.js', 'Framer Motion', 'Tailwind CSS', 'JavaScript', 'HTML', 'CSS', 'Webflow', 'Автоматизація', 'UX/UI Дизайн', 'CRM Integration', 'Telegram Bots']
       }
     },
     {
       key: 'cta',
       content: {
         title: 'Отримайте безкоштовний відео-аудит вашого сайту',
-        subtitle: 'Я запишу 10-хвилинний розбір вашої поточної сторінки, вкажу на помилки в конверсії та запропоную 3 кроки для росту ROI.',
-        buttonText: 'Замовити аудит'
+        subtitle: 'Я подивлюсь вашу сторінку і покажу: де ви втрачаєте клієнтів, що саме не працює, як це виправити. Це не загальні поради — це конкретні кроки під ваш бізнес.',
+        buttonText: 'Отримати розбір',
+        additionalText: '*Консультація безкоштовна. Це вас ні до чого не зобов\'язує.'
       }
     },
     {
       key: 'contacts',
       content: {
-        title: 'Готові побудувати систему?',
-        subtitle: 'Напишіть мені, і ми обговоримо ваш проєкт вже сьогодні.',
+        title: 'Готові почати заробляти більше?',
+        subtitle: 'Напишіть мені — і ми розберемо ваш проект вже сьогодні. Ви отримаєте цінні знання, незалежно від того, чи будемо ми працювати разом вподальшому',
         email: 'kizub888@gmail.com',
         telegram: '@Kizub_BRB',
         formNameLabel: 'Ім’я',
@@ -210,9 +212,9 @@ function seedInitialContent() {
       key: 'seo',
       content: {
         title: 'Roman Dev | Автономні системи залучення клієнтів',
-        description: 'Розробка високоефективних лендінгів та систем автоматизації продажів.',
-        ogTitle: 'Roman Dev - ROI Focused Systems',
-        ogDescription: 'Будую автономні системи залучення клієнтів.',
+        description: 'Будую автономні системи залучення клієнтів, які перетворюють трафік у стабільний потік заявок і продажів.',
+        ogTitle: 'Roman Dev - Системи залучення клієнтів',
+        ogDescription: 'Перетворюйте трафік у стабільний потік заявок.',
         ogImage: '',
         favicon: ''
       }
@@ -220,180 +222,215 @@ function seedInitialContent() {
     {
       key: 'speed_roi',
       content: {
-        title: 'Швидкість відповіді — це ваші гроші',
-        subtitle: 'Дослідження показують: якщо ви відповідаєте клієнту протягом 5 хвилин, ймовірність продажу в 10 разів вища, ніж через годину.',
+        title: 'ШВИДКІСТЬ = ГРОШІ',
+        subtitle: 'Швидкість відповіді безпосередньо впливає на прибуток. Є проста закономірність: чим швидше ви відповідаєте — тим більша ймовірність продажу.',
         statValue: '+400%',
         statLabel: 'Ріст конверсії в продаж',
-        statDesc: 'при відповіді клієнту в перші 5 хвилин після заявки',
+        statDesc: 'при відповіді клієнту в перші 5 хвилин',
         features: [
-          { title: "Миттєві сповіщення", desc: "Заявка падає в Telegram за 1 секунду після натискання кнопки." },
-          { title: "Автоматизація процесів", desc: "Клієнт отримує автоматичне повідомлення або файл одразу." },
-          { title: "Жодних втрачених лідів", desc: "Всі контакти зберігаються в базі, а не губляться в пошті." }
-        ]
+          { title: "✔ Автоматизація", desc: "✔ заявка приходить одразу ✔ Telegram сповіщення ✔ авто-відповідь ✔ нагадування" },
+          { title: "✔ Переваги", desc: "✔ не втрачаєте клієнтів ✔ швидше за конкурентів ✔ ріст конверсії" },
+          { title: "✔ Результат", desc: "✔ Стабільний потік заявок без зливу бюджету" }
+        ],
+        calcTitle: 'Скільки грошей ви реально втрачаєте щомісяця?',
+        calcDesc: 'Більшість бізнесів навіть не рахують це. Але різниця між 1% і 5% конверсії — це не “трохи більше”, це різниця в кілька разів по доходу.',
+        example: 'Наприклад: при тому ж трафіку ви можете отримувати в 2–5 разів більше заявок без збільшення бюджету на рекламу.',
+        labelTraffic: 'Трафік (відвідувачів / міс.)',
+        labelConversion: 'Конверсія (%)',
+        labelCheck: 'Середній чек (грн)',
+        labelCurrentRevenue: 'Поточний дохід:',
+        labelPotentialRevenue: 'Потенціал (при 5% конверсії):',
+        labelLostProfit: 'Ваша недоотримана вигода:'
+      }
+    },
+    {
+      key: 'problems_header',
+      content: {
+        title: 'Проблеми, які ми вирішуємо',
+        subtitle: 'Якщо ваш сайт просто “висить” в інтернеті — він не працює. Ось що ми виправляємо.'
+      }
+    },
+    {
+      key: 'benefits_header',
+      content: {
+        title: 'Чому це працює краще за звичайний сайт',
+        subtitle: 'Ми не просто малюємо картинки. Ми будуємо логіку, яка веде клієнта до покупки.'
+      }
+    },
+    {
+      key: 'cases_header',
+      content: {
+        title: 'Результати, які можна виміряти в грошах',
+        subtitle: 'Кейси, де ми впровадили систему і вивели бізнес на новий рівень.',
+        visitSiteLabel: 'Відвідати сайт',
+        visitSiteHint: 'Натисніть, щоб побачити результат наживо',
+        problemLabel: 'Проблема',
+        solutionLabel: 'Рішення',
+        resultLabel: 'Результат',
+        closeModalLabel: 'Закрити вікно',
+        moreDetailsLabel: 'Дивитись детальніше'
+      }
+    },
+    {
+      key: 'process_header',
+      content: {
+        title: 'Як ми будуємо вашу систему',
+        subtitle: 'Від першого дзвінка до стабільного потоку заявок — всього 6 кроків.',
+        stepLabel: 'Крок'
+      }
+    },
+    {
+      key: 'pricing_header',
+      content: {
+        title: 'Оберіть свій рівень масштабування',
+        subtitle: 'Ми підберемо рішення під ваші задачі: від швидкого старту до повного захоплення ринку.',
+        resultLabel: 'Результат:',
+        selectPlanLabel: 'Обрати цей формат'
+      }
+    },
+    {
+      key: 'faq_header',
+      content: {
+        title: 'Часті запитання',
+        subtitle: 'Відповіді на те, що зазвичай цікавить моїх клієнтів.'
       }
     }
   ];
 
   for (const section of sections) {
-    const exists = db.prepare('SELECT * FROM site_content WHERE section_key = ?').get(section.key);
-    if (!exists) {
-      db.prepare('INSERT INTO site_content (section_key, content_json) VALUES (?, ?)').run(section.key, JSON.stringify(section.content));
-    }
+    db.prepare('INSERT OR REPLACE INTO site_content (section_key, content_json) VALUES (?, ?)').run(section.key, JSON.stringify(section.content));
   }
 
   // Seed cases
-  const casesCount = db.prepare('SELECT COUNT(*) as count FROM cases').get() as { count: number };
-  if (casesCount.count === 0) {
-    const initialCases = [
-      {
-        niche: "Юридичні послуги",
-        title: "Система залучення клієнтів для адвокатського бюро",
-        image: "https://picsum.photos/seed/legal/800/600",
-        problem: "Багато трафіку, але низька якість заявок.",
-        detailed_problem: "Клієнт витрачав понад $2000 на місяць на Google Ads, але отримував лише 5-7 нецільових дзвінків. Відвідувачі не розуміли спеціалізацію бюро та швидко йшли з сайту.",
-        detailed_solution: "Ми провели аналіз конкурентів та виділили ключові переваги. Створили структуру квізу, яка відсіює нецільових клієнтів на етапі опитування. Змінили оффер на 'Безкоштовний розрахунок ризиків вашої справи'.",
-        solution: "Перероблена структура квізу та зміна офферу на безкоштовну консультацію.",
-        result: "Збільшення конверсії у 2.5 рази, заявки стали більш цільовими.",
-        link: "https://example.com/case1"
-      },
-      {
-        niche: "Магазин меблів",
-        title: "E-commerce трансформація для локального виробника",
-        image: "https://picsum.photos/seed/furniture/800/600",
-        problem: "Клієнти дивляться каталог, але не залишають контакти.",
-        detailed_problem: "Сайт виглядав як статична галерея. Користувачі переглядали фото, але не мали стимулу залишити номер телефону або зробити замовлення онлайн.",
-        detailed_solution: "Впровадили інтерактивний конструктор кухні. Додали лід-магніт 'Гайд з вибору матеріалів для меблів'. Інтегрували Telegram-бота, який автоматично надсилає прайс-лист після заявки.",
-        solution: "Додано лід-магніт та інтегровано Telegram-бота для швидкої відповіді.",
-        result: "Збір бази потенційних клієнтів зріс на 40%.",
-        link: "https://example.com/case2"
-      },
-      {
-        niche: "IT-курси",
-        title: "Landing Page для школи програмування",
-        image: "https://picsum.photos/seed/it/800/600",
-        problem: "Складна послуга, яку важко пояснити на сайті.",
-        detailed_problem: "Потенційні студенти не розуміли програму навчання та перспективи працевлаштування. Конверсія у запис на пробний урок була нижче 1%.",
-        detailed_solution: "Розробили лонгрід з чітким візуальним планом навчання. Додали блок з реальними відео-відгуками випускників. Створили UX-оптимізовану форму запису з мінімальною кількістю полів.",
-        solution: "Створено лонгрід з відео-відгуками та покроковим планом навчання.",
-        result: "Зниження вартості ліда на 30% за рахунок кращого прогріву.",
-        link: "https://example.com/case3"
-      }
-    ];
-
-    const insertCase = db.prepare(`
-      INSERT INTO cases (niche, title, image, problem, detailed_problem, detailed_solution, solution, result, link)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
-    `);
-    for (const c of initialCases) {
-      insertCase.run(c.niche, c.title, c.image, c.problem, c.detailed_problem, c.detailed_solution, c.solution, c.result, c.link);
+  db.prepare('DELETE FROM cases').run();
+  const initialCases = [
+    {
+      niche: "Адвокатське бюро",
+      title: "Система для адвокатського бюро",
+      image: "https://picsum.photos/seed/legal/800/600",
+      problem: "багато переходів, але мало заявок",
+      detailed_problem: "Сайт мав багато відвідувачів з реклами, але конверсія в заявку була критично низькою. Бюджет витрачався, але клієнти не залишали контакти.",
+      detailed_solution: "— змінили структуру сайту\n— переписали тексти\n— додали логіку дій\n— підключили обробку заявок",
+      solution: "Повна перебудова воронки та копірайтингу.",
+      result: "— збільшення кількості заявок\n— стабільний потік клієнтів\n— без збільшення бюджету",
+      link: "https://example.com/case1"
+    },
+    {
+      niche: "Будівництво",
+      title: "Знизили вартість ліда в 3.75 рази",
+      image: "https://picsum.photos/seed/construction/800/600",
+      problem: "Висока вартість залучення клієнта.",
+      detailed_problem: "Клієнт витрачав великі бюджети на рекламу, але вартість одного ліда була занадто високою для рентабельності бізнесу.",
+      detailed_solution: "Впровадили систему з квізом та автоматизацією, що дозволило краще сегментувати аудиторію та знизити вартість ліда.",
+      solution: "Впровадження квіз-системи та оптимізація офферу.",
+      result: "Вартість ліда впала з 450 грн до 120 грн.",
+      link: "https://example.com/case2"
     }
+  ];
+
+  const insertCase = db.prepare(`
+    INSERT INTO cases (niche, title, image, problem, detailed_problem, detailed_solution, solution, result, link)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+  `);
+  for (const c of initialCases) {
+    insertCase.run(c.niche, c.title, c.image, c.problem, c.detailed_problem, c.detailed_solution, c.solution, c.result, c.link);
   }
 
   // Seed pricing
-  const pricingCount = db.prepare('SELECT COUNT(*) as count FROM pricing_plans').get() as { count: number };
-  if (pricingCount.count === 0) {
-    const initialPlans = [
-      {
-        name: "СИСТЕМА СТАРТ",
-        price: "$400",
-        label: "Для швидкого старту",
-        featured: 0,
-        features_json: JSON.stringify(["Лендінг", "Аналіз конкурентів", "Дизайн + Копірайтинг", "Telegram сповіщення", "Адаптив під мобільні"]),
-        result_text: "Автономний лендінг для перших продажів"
-      },
-      {
-        name: "БІЗНЕС ДВИГУН",
-        price: "$650",
-        label: "Найчастіше обирають",
-        featured: 1,
-        features_json: JSON.stringify(["Все з Тарифу Старт", "Глибока стратегія", "Складна автоматизація", "Інтеграція з CRM", "Налаштування аналітики", "A/B тестування"]),
-        result_text: "Повноцінна система генерації та обробки лідів"
-      },
-      {
-        name: "ПРО АРХІТЕКТОР",
-        price: "$1000+",
-        label: "Максимум результату",
-        featured: 0,
-        features_json: JSON.stringify(["Все з Тарифу Двигун", "Повна воронка продажів", "Email/SMS маркетинг", "UX-оптимізація", "Супровід 1 місяць", "Пріоритетна підтримка"]),
-        result_text: "Масштабована бізнес-система під ключ"
-      }
-    ];
-
-    const insertPlan = db.prepare(`
-      INSERT INTO pricing_plans (name, price, label, featured, features_json, result_text)
-      VALUES (?, ?, ?, ?, ?, ?)
-    `);
-    for (const p of initialPlans) {
-      insertPlan.run(p.name, p.price, p.label, p.featured, p.features_json, p.result_text);
+  db.prepare('DELETE FROM pricing_plans').run();
+  const initialPlans = [
+    {
+      name: "від 400$",
+      price: "Старт",
+      label: "для швидкого старту",
+      featured: 0,
+      features_json: JSON.stringify(["Лендінг", "Аналіз конкурентів", "Дизайн + Копірайтинг", "Telegram сповіщення", "Адаптив під мобільні"]),
+      result_text: "Швидкий запуск для перевірки ніші та отримання лідів"
+    },
+    {
+      name: "від 650$",
+      price: "Бізнес",
+      label: "Генерація та обробка",
+      featured: 1,
+      features_json: JSON.stringify(["Все з Тарифу Старт", "Глибока стратегія", "Складна автоматизація", "Інтеграція з CRM", "Налаштування аналітики", "A/B тестування"]),
+      result_text: "Повноцінна система генерації та обробки лідів"
+    },
+    {
+      name: "від 1000$",
+      price: "Про",
+      label: "бізнес-система",
+      featured: 0,
+      features_json: JSON.stringify(["Все з Тарифу Бізнес", "Повна воронка продажів", "Email/SMS маркетинг", "UX-оптимізація", "Супровід 1 місяць", "Пріоритетна підтримка"]),
+      result_text: "Масштабована бізнес-система під ключ"
     }
+  ];
+
+  const insertPlan = db.prepare(`
+    INSERT INTO pricing_plans (name, price, label, featured, features_json, result_text)
+    VALUES (?, ?, ?, ?, ?, ?)
+  `);
+  for (const p of initialPlans) {
+    insertPlan.run(p.name, p.price, p.label, p.featured, p.features_json, p.result_text);
   }
 
   // Seed process
-  const processCount = db.prepare('SELECT COUNT(*) as count FROM process_steps').get() as { count: number };
-  if (processCount.count === 0) {
-    const initialSteps = [
-      { number: "01", title: "Аналіз та стратегія", desc: "Вивчаю ваш продукт, конкурентів та шлях клієнта. Формуємо оффер, від якого неможливо відмовитись." },
-      { number: "02", title: "Архітектура системи", desc: "Проєктую структуру лендінгу та логіку автоматизації. Кожен блок має свою маркетингову ціль." },
-      { number: "03", title: "Дизайн та розробка", desc: "Створюю сучасний, швидкий та адаптивний інтерфейс, який підкреслює експертність вашого бренду." },
-      { number: "04", title: "Запуск та оптимізація", desc: "Підключаю аналітику, CRM та Telegram-ботів. Тестуємо систему та виводимо на планові показники ROI." }
-    ];
-    const insertStep = db.prepare('INSERT INTO process_steps (step_number, title, description) VALUES (?, ?, ?)');
-    for (const s of initialSteps) {
-      insertStep.run(s.number, s.title, s.desc);
-    }
+  db.prepare('DELETE FROM process_steps').run();
+  const initialSteps = [
+    { number: "01", title: "Аналіз", desc: "Ми детально розбираємо: ваш продукт, конкурентів, як зараз приходять клієнти, де ви втрачаєте гроші." },
+    { number: "02", title: "Стратегія і структура", desc: "Будуємо логіку сайту: що бачить клієнт, як він рухається, де приймає рішення." },
+    { number: "03", title: "Копірайтинг і прототип", desc: "Пишемо тексти, які продають, і створюємо чорновий варіант системи." },
+    { number: "04", title: "Дизайн і розробка", desc: "Створюємо візуальну частину, яка підкреслює вашу експертність, та програмуємо систему." },
+    { number: "05", title: "Автоматизація", desc: "Підключаємо Telegram, CRM, налаштовуємо сповіщення та нагадування." },
+    { number: "06", title: "Запуск і підтримка", desc: "Запускаємо систему, тестуємо і супроводжуємо перший місяць." }
+  ];
+
+  const insertStep = db.prepare(`
+    INSERT INTO process_steps (step_number, title, description)
+    VALUES (?, ?, ?)
+  `);
+  for (const s of initialSteps) {
+    insertStep.run(s.number, s.title, s.desc);
   }
 
   // Seed problems
-  const problemsCount = db.prepare('SELECT COUNT(*) as count FROM problem_cards').get() as { count: number };
-  if (problemsCount.count === 0) {
-    const initialProblems = [
-      { title: "Люди заходять і йдуть без заявки", desc: "Ви витрачаєте бюджет на рекламу, але відвідувачі не розуміють цінності та закривають вкладку." },
-      { title: "Клієнти купують у тих, хто відповідає швидше", desc: "Ваш сайт не інтегрований з CRM, і ви втрачаєте ліди через довгу обробку заявок." },
-      { title: "Сайт виглядає нормально, але не продає", desc: "Гарний дизайн без маркетингової структури — це просто картинка, а не інструмент бізнесу." }
-    ];
-    const insertProblem = db.prepare('INSERT INTO problem_cards (title, description) VALUES (?, ?)');
-    for (const p of initialProblems) {
-      insertProblem.run(p.title, p.desc);
-    }
+  db.prepare('DELETE FROM problem_cards').run();
+  const initialProblems = [
+    { title: "Люди заходять на сайт і йдуть", desc: "Користувач відкриває сторінку і за 3–5 секунд вирішує — залишатися чи ні. Якщо він не розуміє цінність — він просто закриває вкладку. І кожен такий перехід — це ваші гроші." },
+    { title: "Ви втрачаєте заявки після їх отримання", desc: "Якщо ви відповідаєте через 30–60 хв або заявка 'загубилась' — клієнт уже пішов до конкурента. Навіть гарячий лід остигає миттєво." },
+    { title: "Сайт не виконує функцію продажу", desc: "Більшість сайтів — це просто 'вітрина'. Вони виглядають нормально, але не ведуть до дії і не працюють як система. У результаті — немає стабільних заявок." }
+  ];
+  const insertProblem = db.prepare('INSERT INTO problem_cards (title, description) VALUES (?, ?)');
+  for (const p of initialProblems) {
+    insertProblem.run(p.title, p.desc);
   }
 
   // Seed benefits
-  const benefitsCount = db.prepare('SELECT COUNT(*) as count FROM benefit_cards').get() as { count: number };
-  if (benefitsCount.count === 0) {
-    const initialBenefits = [
-      { icon: "Layout", title: "Структура і тексти", result: "Ведуть клієнта до заявки, а не просто показують інформацію" },
-      { icon: "Zap", title: "Швидкість", result: "Сайт завантажується швидко і не дає користувачу піти" },
-      { icon: "MessageSquare", title: "Заявки без втрат", result: "Контакти одразу потрапляють у Telegram або CRM" }
-    ];
-    const insertBenefit = db.prepare('INSERT INTO benefit_cards (icon_name, title, result) VALUES (?, ?, ?)');
-    for (const b of initialBenefits) {
-      insertBenefit.run(b.icon, b.title, b.result);
-    }
+  db.prepare('DELETE FROM benefit_cards').run();
+  const initialBenefits = [
+    { icon: "Layout", title: "Продумана структура", result: "Ми будуємо логіку: що бачить людина, що вона думає і чому вона залишає заявку." },
+    { icon: "Zap", title: "Швидкість і простота", result: "Сайт завантажується миттєво і не перевантажує користувача. Все максимально зрозуміло." },
+    { icon: "MessageSquare", title: "Повна обробка заявок", result: "Заявка в Telegram, збереження в системі та автоматичні нагадування." }
+  ];
+  const insertBenefit = db.prepare('INSERT INTO benefit_cards (icon_name, title, result) VALUES (?, ?, ?)');
+  for (const b of initialBenefits) {
+    insertBenefit.run(b.icon, b.title, b.result);
   }
 
   // Seed FAQ
+  db.prepare('DELETE FROM faq').run();
   const initialFaq = [
-    { q: "Скільки часу займає розробка?", a: "Зазвичай від 7 до 14 днів, залежно від складності системи та швидкості зворотного зв'язку." },
-    { q: "Чи потрібна мені CRM?", a: "Якщо у вас більше 5 заявок на день — так. Я допоможу обрати та інтегрувати оптимальне рішення." },
-    { q: "Які гарантії результату?", a: "Я гарантую технічну якість та відповідність маркетинговій стратегії. ROI залежить також від вашого відділу продажів та якості трафіку." },
-    { q: "Чи можна редагувати контент самому?", a: "Так, я надаю зручну адмін-панель, де ви зможете змінювати тексти, ціни та кейси без програміста." },
-    { q: "Яка вартість підтримки після запуску?", a: "Перший місяць підтримки безкоштовний. Далі ми можемо домовитись про разові оновлення або щомісячний супровід." },
-    { q: "Чи працюєте ви з іноземними ринками?", a: "Так, я маю досвід розробки англомовних лендінгів для ринків США та Європи." },
-    { q: "Які платформи ви використовуєте?", a: "Я розробляю кастомні рішення на React/Node.js для максимальної швидкості, або Webflow для проектів, де клієнту важливо самому легко змінювати дизайн." },
-    { q: "Чи допомагаєте ви з налаштуванням реклами?", a: "Я фокусуюсь на конверсії сайту, але можу порекомендувати перевірених партнерів з налаштування Google Ads та Facebook/Instagram реклами." }
+    { q: "Скільки часу займає розробка?", a: "Зазвичай від 7 до 14 днів. Точний термін залежить від складності задачі і швидкості зворотного зв’язку з вашого боку." },
+    { q: "Чи потрібна мені CRM?", a: "Так, якщо ви хочете не втрачати заявки. Без CRM частина клієнтів просто губиться — особливо якщо заявок стає більше." },
+    { q: "Чи можна редагувати сайт самостійно?", a: "Так. Ви отримуєте адмін-панель, де можете змінювати тексти, фото, блоки і контент без розробника." },
+    { q: "Що відбувається після заявки?", a: "Заявка одразу приходить у Telegram. Вона також зберігається в системі. Якщо ви не відповідаєте — приходить нагадування." },
+    { q: "Чи допомагаєте з рекламою?", a: "Так. Можу або налаштувати базово, або дати чіткі рекомендації, щоб сайт почав приносити заявки." },
+    { q: "Чи буде сайт показуватись у Google?", a: "Так. Сайт одразу оптимізується під пошук: правильна структура, індексація, підключення аналітики." },
+    { q: "Чи є гарантія результату?", a: "Я працюю не просто “щоб зробити сайт”, а щоб система почала приносити заявки." }
   ];
 
-  const checkFaq = db.prepare('SELECT id FROM faq WHERE question = ?');
   const insertFaq = db.prepare('INSERT INTO faq (question, answer) VALUES (?, ?)');
-
   for (const f of initialFaq) {
-    const exists = checkFaq.get(f.q);
-    if (!exists) {
-      console.log(`Seeding FAQ: ${f.q}`);
-      insertFaq.run(f.q, f.a);
-    } else {
-      console.log(`FAQ already exists: ${f.q}`);
-    }
+    insertFaq.run(f.q, f.a);
   }
 }
 

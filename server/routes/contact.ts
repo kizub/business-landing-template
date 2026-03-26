@@ -4,7 +4,7 @@ import axios from "axios";
 const router = express.Router();
 
 router.post("/", async (req, res) => {
-  const { name, contact, message } = req.body;
+  const { name, contact, message, plan, source } = req.body;
 
   if (!name || !contact) {
     return res.status(400).json({ message: "Name and contact are required" });
@@ -18,7 +18,8 @@ router.post("/", async (req, res) => {
         name,
         contact,
         message,
-        source: "Website Contact Form",
+        plan,
+        source: source || "Website Contact Form",
         timestamp: new Date().toISOString()
       });
       console.log("Data sent to Make.com webhook successfully");

@@ -31,6 +31,17 @@ async function startServer() {
   // Middleware
   app.use(express.json());
   app.use(cookieParser());
+  
+  // Force HTTPS in production
+  if (process.env.NODE_ENV === "production" || process.env.RAILWAY_ENVIRONMENT) {
+    app.use((req, res, next) => {
+      if (req.headers["x-forwarded-proto"] !== "https") {
+        return res.redirect(`https://${req.headers.host}${req.url}`);
+      }
+      next();
+    });
+  }
+
   app.use(cors({
     origin: true,
     credentials: true
@@ -68,7 +79,7 @@ async function startServer() {
     }
   }
 
-  app.listen(PORT, "0.0.0.0", () => {
+  app.listen(Number(PORT), "0.0.0.0", () => {
     console.log(`🚀 Server is pulse-checking on port ${PORT}`);
     console.log(`Environment: ${isProduction ? 'Production' : 'Development'}`);
   });

@@ -171,9 +171,9 @@ const Dashboard: React.FC<DashboardProps> = ({ onLogout }) => {
         </div>
         
         <div className="flex-grow overflow-y-auto p-4 space-y-1">
-          {tabs.map(tab => (
+          {tabs.map((tab, i) => (
             <button
-              key={tab.id}
+              key={i}
               onClick={() => setActiveTab(tab.id)}
               className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-all ${
                 activeTab === tab.id 
@@ -276,6 +276,8 @@ const Dashboard: React.FC<DashboardProps> = ({ onLogout }) => {
             {activeTab === 'cases' && (
               <CasesEditor 
                 items={data.cases} 
+                header={data.content.cases_header}
+                onSaveHeader={(content) => handleSaveSection('cases_header', content)}
                 onSave={(id, data) => handleSaveEntity('cases', id, data)} 
                 onCreate={(data) => handleCreateEntity('cases', data)}
                 onDelete={(id) => handleDeleteEntity('cases', id)}
@@ -286,6 +288,8 @@ const Dashboard: React.FC<DashboardProps> = ({ onLogout }) => {
             {activeTab === 'pricing' && (
               <PricingEditor 
                 items={data.pricing} 
+                header={data.content.pricing_header}
+                onSaveHeader={(content) => handleSaveSection('pricing_header', content)}
                 onSave={(id, data) => handleSaveEntity('pricing', id, data)} 
                 saving={saving} 
               />
@@ -293,6 +297,8 @@ const Dashboard: React.FC<DashboardProps> = ({ onLogout }) => {
             {activeTab === 'faq' && (
               <FAQEditor 
                 items={data.faq} 
+                header={data.content.faq_header}
+                onSaveHeader={(content) => handleSaveSection('faq_header', content)}
                 onSave={(id, data) => handleSaveEntity('faq', id, data)} 
                 onCreate={(data) => handleCreateEntity('faq', data)}
                 onDelete={(id) => handleDeleteEntity('faq', id)}
@@ -302,6 +308,8 @@ const Dashboard: React.FC<DashboardProps> = ({ onLogout }) => {
             {activeTab === 'process' && (
               <ProcessEditor 
                 items={data.process} 
+                header={data.content.process_header}
+                onSaveHeader={(content) => handleSaveSection('process_header', content)}
                 onSave={(id, data) => handleSaveEntity('process', id, data)} 
                 saving={saving} 
               />
@@ -309,6 +317,8 @@ const Dashboard: React.FC<DashboardProps> = ({ onLogout }) => {
             {activeTab === 'problems' && (
               <ProblemsEditor 
                 items={data.problems} 
+                header={data.content.problems_header}
+                onSaveHeader={(content) => handleSaveSection('problems_header', content)}
                 onSave={(id, data) => handleSaveEntity('problems', id, data)} 
                 saving={saving} 
               />
@@ -316,6 +326,8 @@ const Dashboard: React.FC<DashboardProps> = ({ onLogout }) => {
             {activeTab === 'benefits' && (
               <BenefitsEditor 
                 items={data.benefits} 
+                header={data.content.benefits_header}
+                onSaveHeader={(content) => handleSaveSection('benefits_header', content)}
                 onSave={(id, data) => handleSaveEntity('benefits', id, data)} 
                 saving={saving} 
               />
@@ -329,12 +341,51 @@ const Dashboard: React.FC<DashboardProps> = ({ onLogout }) => {
 
 // --- Sub-Editors ---
 
+const SectionHeaderEditor = ({ content, onSave, saving, title = "Заголовок секції", fields = [] }: any) => {
+  const [form, setForm] = useState(content || {});
+  
+  useEffect(() => {
+    setForm(content || {});
+  }, [content]);
+
+  return (
+    <div className="p-8 bg-slate-50 rounded-[32px] border border-slate-100 mb-12 space-y-6">
+      <div className="flex items-center justify-between mb-2">
+        <h3 className="text-xl font-bold text-slate-900">{title}</h3>
+        <SaveButton onClick={() => onSave(form)} loading={saving} />
+      </div>
+      <div className="grid gap-6">
+        {fields.map((field: any) => (
+          field.type === 'textarea' ? (
+            <Textarea 
+              key={field.key} 
+              label={field.label} 
+              value={form[field.key] || ''} 
+              onChange={(v) => setForm({...form, [field.key]: v})} 
+            />
+          ) : (
+            <Input 
+              key={field.key} 
+              label={field.label} 
+              value={form[field.key] || ''} 
+              onChange={(v) => setForm({...form, [field.key]: v})} 
+            />
+          )
+        ))}
+      </div>
+    </div>
+  );
+};
+
 const HeroEditor = ({ content, onSave, onUpload, saving }: any) => {
   const [form, setForm] = useState(content);
   return (
     <div className="space-y-6">
       <Input label="Заголовок" value={form.title} onChange={(v) => setForm({...form, title: v})} />
-      <Textarea label="Підзаголовок" value={form.subtitle} onChange={(v) => setForm({...form, subtitle: v})} />
+      <div className="space-y-1">
+        <Textarea label="Підзаголовок" value={form.subtitle} onChange={(v) => setForm({...form, subtitle: v})} />
+        <p className="text-xs text-slate-400 italic">Порада: Текст після 3-го рядка буде прихований під кнопкою "докладніше".</p>
+      </div>
       <div className="grid grid-cols-2 gap-6">
         <Input label="Текст кнопки 1" value={form.primaryButtonText} onChange={(v) => setForm({...form, primaryButtonText: v})} />
         <Input label="Текст кнопки 2" value={form.secondaryButtonText} onChange={(v) => setForm({...form, secondaryButtonText: v})} />
@@ -342,6 +393,10 @@ const HeroEditor = ({ content, onSave, onUpload, saving }: any) => {
       <div className="grid grid-cols-2 gap-6">
         <Input label="Бейдж 1" value={form.badge1} onChange={(v) => setForm({...form, badge1: v})} />
         <Input label="Бейдж 2" value={form.badge2} onChange={(v) => setForm({...form, badge2: v})} />
+      </div>
+      <div className="grid grid-cols-2 gap-6">
+        <Input label="Лейбл 'Докладніше'" value={form.readMoreLabel} onChange={(v) => setForm({...form, readMoreLabel: v})} />
+        <Input label="Лейбл 'Згорнути'" value={form.collapseLabel} onChange={(v) => setForm({...form, collapseLabel: v})} />
       </div>
       <div className="border-t border-slate-100 pt-6">
         <h4 className="text-sm font-bold text-slate-900 mb-4 uppercase tracking-wider">Візуальний потік (Hero Visual)</h4>
@@ -364,7 +419,7 @@ const HeroEditor = ({ content, onSave, onUpload, saving }: any) => {
           </div>
         </div>
         <div className="grid grid-cols-2 gap-6 mt-6 border-t border-slate-50 pt-6">
-          <Input label="Текст кнопки 'Докладніше'" value={form.moreButtonText} onChange={(v) => setForm({...form, moreButtonText: v})} />
+          <Input label="Текст кнопки 'Докладніше' (Відео)" value={form.moreButtonText} onChange={(v) => setForm({...form, moreButtonText: v})} />
           <VideoPicker label="Відео (YouTube або файл)" value={form.videoUrl} onChange={(v) => setForm({...form, videoUrl: v})} onUpload={onUpload} />
         </div>
       </div>
@@ -381,16 +436,40 @@ const AboutEditor = ({ content, onSave, onUpload, saving }: any) => {
       <div className="space-y-4">
         <label className="block text-sm font-bold text-slate-700 uppercase tracking-wider">Параграфи</label>
         {form.paragraphs.map((p: string, i: number) => (
-          <Textarea key={i} value={p} onChange={(v) => {
-            const newP = [...form.paragraphs];
-            newP[i] = v;
-            setForm({...form, paragraphs: newP});
-          }} />
+          <div key={i} className="flex gap-2">
+            <Textarea value={p} onChange={(v) => {
+              const newP = [...form.paragraphs];
+              newP[i] = v;
+              setForm({...form, paragraphs: newP});
+            }} />
+            <button 
+              onClick={() => {
+                const newP = form.paragraphs.filter((_: any, idx: number) => idx !== i);
+                setForm({...form, paragraphs: newP});
+              }}
+              className="p-2 text-red-500 hover:bg-red-50 rounded-lg h-fit"
+            >
+              <Trash2 size={18} />
+            </button>
+          </div>
         ))}
+        <button 
+          onClick={() => setForm({...form, paragraphs: [...form.paragraphs, '']})}
+          className="flex items-center gap-2 text-accent font-bold text-sm"
+        >
+          <Plus size={16} /> Додати параграф
+        </button>
       </div>
       <div className="grid grid-cols-2 gap-6">
         <Input label="Значення досвіду" value={form.experienceValue} onChange={(v) => setForm({...form, experienceValue: v})} />
         <Input label="Лейбл досвіду" value={form.experienceLabel} onChange={(v) => setForm({...form, experienceLabel: v})} />
+      </div>
+      <div className="space-y-4">
+        <label className="block text-sm font-bold text-slate-700 uppercase tracking-wider">Навички (через кому або по одній на рядок)</label>
+        <Textarea 
+          value={form.skills?.join('\n')} 
+          onChange={(v) => setForm({...form, skills: v.split('\n').filter((s: string) => s.trim() !== '')})} 
+        />
       </div>
       <ImagePicker label="Фото" value={form.image} onChange={(v) => setForm({...form, image: v})} onUpload={onUpload} />
       <SaveButton onClick={() => onSave(form)} loading={saving} />
@@ -422,9 +501,30 @@ const ContactsEditor = ({ content, onSave, saving }: any) => {
       </div>
       <div className="grid grid-cols-2 gap-6">
         <Input label="Лейбл імені" value={form.formNameLabel} onChange={(v) => setForm({...form, formNameLabel: v})} />
-        <Input label="Лейбл контакту" value={form.formContactLabel} onChange={(v) => setForm({...form, formContactLabel: v})} />
+        <Input label="Placeholder імені" value={form.formNamePlaceholder} onChange={(v) => setForm({...form, formNamePlaceholder: v})} />
       </div>
-      <Input label="Текст кнопки форми" value={form.formButtonText} onChange={(v) => setForm({...form, formButtonText: v})} />
+      <div className="grid grid-cols-2 gap-6">
+        <Input label="Лейбл контакту" value={form.formContactLabel} onChange={(v) => setForm({...form, formContactLabel: v})} />
+        <Input label="Placeholder контакту" value={form.formContactPlaceholder} onChange={(v) => setForm({...form, formContactPlaceholder: v})} />
+      </div>
+      <div className="grid grid-cols-2 gap-6">
+        <Input label="Лейбл коментаря" value={form.formCommentLabel} onChange={(v) => setForm({...form, formCommentLabel: v})} />
+        <Input label="Placeholder коментаря" value={form.formCommentPlaceholder} onChange={(v) => setForm({...form, formCommentPlaceholder: v})} />
+      </div>
+      <div className="grid grid-cols-2 gap-6">
+        <Input label="Текст кнопки форми" value={form.formButtonText} onChange={(v) => setForm({...form, formButtonText: v})} />
+        <Input label="Текст кнопки (завантаження)" value={form.formButtonLoadingText} onChange={(v) => setForm({...form, formButtonLoadingText: v})} />
+      </div>
+      <div className="border-t border-slate-100 pt-6">
+        <h4 className="text-sm font-bold text-slate-900 mb-4 uppercase tracking-wider">Повідомлення про успіх</h4>
+        <Input label="Заголовок успіху" value={form.successTitle} onChange={(v) => setForm({...form, successTitle: v})} />
+        <Textarea label="Підзаголовок успіху" value={form.successSubtitle} onChange={(v) => setForm({...form, successSubtitle: v})} />
+        <Input label="Текст кнопки 'Надіслати ще'" value={form.successButtonText} onChange={(v) => setForm({...form, successButtonText: v})} />
+      </div>
+      <div className="grid grid-cols-2 gap-6">
+        <Input label="Текст помилки" value={form.errorText} onChange={(v) => setForm({...form, errorText: v})} />
+        <Input label="Лейбл підказки (Tip)" value={form.tipLabel} onChange={(v) => setForm({...form, tipLabel: v})} />
+      </div>
       <SaveButton onClick={() => onSave(form)} loading={saving} />
     </div>
   );
@@ -434,8 +534,20 @@ const FooterEditor = ({ content, onSave, saving }: any) => {
   const [form, setForm] = useState(content);
   return (
     <div className="space-y-6">
-      <Input label="Copyright" value={form.copyright} onChange={(v) => setForm({...form, copyright: v})} />
-      <Input label="Telegram Link" value={form.telegramLink} onChange={(v) => setForm({...form, telegramLink: v})} />
+      <Input label="Назва бренду" value={form.brandName} onChange={(v) => setForm({...form, brandName: v})} />
+      <div className="grid grid-cols-2 gap-6">
+        <Input label="Навігація: Кейси" value={form.navCases} onChange={(v) => setForm({...form, navCases: v})} />
+        <Input label="Навігація: Процес" value={form.navProcess} onChange={(v) => setForm({...form, navProcess: v})} />
+      </div>
+      <div className="grid grid-cols-2 gap-6">
+        <Input label="Навігація: Тарифи" value={form.navPricing} onChange={(v) => setForm({...form, navPricing: v})} />
+        <Input label="Навігація: FAQ" value={form.navFaq} onChange={(v) => setForm({...form, navFaq: v})} />
+      </div>
+      <Input label="Текст копірайту" value={form.copyrightText} onChange={(v) => setForm({...form, copyrightText: v})} />
+      <div className="grid grid-cols-2 gap-6">
+        <Input label="Telegram Link" value={form.telegramLink} onChange={(v) => setForm({...form, telegramLink: v})} />
+        <Input label="Telegram Label" value={form.telegramLabel} onChange={(v) => setForm({...form, telegramLabel: v})} />
+      </div>
       <SaveButton onClick={() => onSave(form)} loading={saving} />
     </div>
   );
@@ -461,17 +573,75 @@ const SpeedROIEditor = ({ content, onSave, saving }: any) => {
     <div className="space-y-6">
       <Input label="Заголовок" value={form.title} onChange={(v) => setForm({...form, title: v})} />
       <Textarea label="Підзаголовок" value={form.subtitle} onChange={(v) => setForm({...form, subtitle: v})} />
-      <div className="grid grid-cols-3 gap-6">
+      <div className="grid grid-cols-2 gap-6">
+        <Input label="Префікс стат." value={form.statPrefix} onChange={(v) => setForm({...form, statPrefix: v})} />
         <Input label="Значення стат." value={form.statValue} onChange={(v) => setForm({...form, statValue: v})} />
+      </div>
+      <div className="grid grid-cols-2 gap-6">
         <Input label="Лейбл стат." value={form.statLabel} onChange={(v) => setForm({...form, statLabel: v})} />
         <Input label="Опис стат." value={form.statDesc} onChange={(v) => setForm({...form, statDesc: v})} />
       </div>
+      <Textarea label="Приклад для калькулятора (ROI Example)" value={form.example} onChange={(v) => setForm({...form, example: v})} />
+      
+      <div className="border-t border-slate-100 pt-6">
+        <h4 className="text-sm font-bold text-slate-900 mb-4 uppercase tracking-wider">Лейбли калькулятора</h4>
+        <div className="grid grid-cols-2 gap-4">
+          <Input label="Трафік" value={form.labelTraffic} onChange={(v) => setForm({...form, labelTraffic: v})} />
+          <Input label="Конверсія" value={form.labelConversion} onChange={(v) => setForm({...form, labelConversion: v})} />
+        </div>
+        <div className="grid grid-cols-2 gap-4">
+          <Input label="Середній чек" value={form.labelCheck} onChange={(v) => setForm({...form, labelCheck: v})} />
+          <Input label="Поточний дохід" value={form.labelCurrentRevenue} onChange={(v) => setForm({...form, labelCurrentRevenue: v})} />
+        </div>
+        <div className="grid grid-cols-2 gap-4">
+          <Input label="Потенційний дохід" value={form.labelPotentialRevenue} onChange={(v) => setForm({...form, labelPotentialRevenue: v})} />
+          <Input label="Втрачений прибуток" value={form.labelLostProfit} onChange={(v) => setForm({...form, labelLostProfit: v})} />
+        </div>
+      </div>
+
+      <div className="border-t border-slate-100 pt-6">
+        <h4 className="text-sm font-bold text-slate-900 mb-4 uppercase tracking-wider">Переваги швидкості (Features)</h4>
+        <div className="space-y-6">
+          {(form.features || []).map((feature: any, i: number) => (
+            <div key={i} className="p-4 bg-slate-50 rounded-xl relative group">
+              <button 
+                onClick={() => {
+                  const newFeatures = form.features.filter((_: any, idx: number) => idx !== i);
+                  setForm({...form, features: newFeatures});
+                }}
+                className="absolute top-2 right-2 p-1 text-slate-400 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-all"
+              >
+                <Trash2 size={16} />
+              </button>
+              <div className="grid gap-4">
+                <Input label="Заголовок переваги" value={feature.title} onChange={(v) => {
+                  const newFeatures = [...form.features];
+                  newFeatures[i] = { ...feature, title: v };
+                  setForm({...form, features: newFeatures});
+                }} />
+                <Textarea label="Опис переваги" value={feature.desc} onChange={(v) => {
+                  const newFeatures = [...form.features];
+                  newFeatures[i] = { ...feature, desc: v };
+                  setForm({...form, features: newFeatures});
+                }} />
+              </div>
+            </div>
+          ))}
+          <button 
+            onClick={() => setForm({...form, features: [...(form.features || []), { title: '', desc: '' }]})}
+            className="flex items-center gap-2 text-accent font-bold text-sm"
+          >
+            <Plus size={16} /> Додати перевагу
+          </button>
+        </div>
+      </div>
+      
       <SaveButton onClick={() => onSave(form)} loading={saving} />
     </div>
   );
 };
 
-const CasesEditor = ({ items, onSave, onCreate, onDelete, onUpload, saving }: any) => {
+const CasesEditor = ({ items, header, onSaveHeader, onSave, onCreate, onDelete, onUpload, saving }: any) => {
   const [showAdd, setShowAdd] = useState(false);
   const emptyCase = {
     title: '',
@@ -487,6 +657,24 @@ const CasesEditor = ({ items, onSave, onCreate, onDelete, onUpload, saving }: an
 
   return (
     <div className="space-y-12">
+      <SectionHeaderEditor 
+        title="Заголовки секції Кейси"
+        content={header}
+        onSave={onSaveHeader}
+        saving={saving}
+        fields={[
+          { key: 'title', label: 'Заголовок' },
+          { key: 'subtitle', label: 'Підзаголовок', type: 'textarea' },
+          { key: 'moreDetailsLabel', label: 'Текст кнопки "Детальніше"' },
+          { key: 'visitSiteLabel', label: 'Текст кнопки "Відвідати сайт"' },
+          { key: 'visitSiteHint', label: 'Підказка кнопки "Відвідати сайт"' },
+          { key: 'problemLabel', label: 'Лейбл "Проблема"' },
+          { key: 'solutionLabel', label: 'Лейбл "Рішення"' },
+          { key: 'resultLabel', label: 'Лейбл "Результат"' },
+          { key: 'closeModalLabel', label: 'Текст кнопки "Закрити"' },
+        ]}
+      />
+
       <div className="flex justify-between items-center">
         <h3 className="text-xl font-bold text-slate-900">Список кейсів</h3>
         <button 
@@ -515,9 +703,9 @@ const CasesEditor = ({ items, onSave, onCreate, onDelete, onUpload, saving }: an
       )}
 
       <div className="space-y-8">
-        {items.map((item: any) => (
+        {items.map((item: any, i: number) => (
           <CaseItemEditor 
-            key={item.id} 
+            key={i} 
             item={item} 
             onSave={onSave} 
             onDelete={() => onDelete(item.id)}
@@ -558,11 +746,23 @@ const CaseItemEditor = ({ item, onSave, onDelete, onUpload, saving, isNew }: any
   );
 };
 
-const PricingEditor = ({ items, onSave, saving }: any) => {
+const PricingEditor = ({ items, header, onSaveHeader, onSave, saving }: any) => {
   return (
     <div className="space-y-12">
-      {items.map((item: any) => (
-        <PricingItemEditor key={item.id} item={item} onSave={onSave} saving={saving} />
+      <SectionHeaderEditor 
+        title="Заголовки секції Тарифи"
+        content={header}
+        onSave={onSaveHeader}
+        saving={saving}
+        fields={[
+          { key: 'title', label: 'Заголовок' },
+          { key: 'subtitle', label: 'Підзаголовок', type: 'textarea' },
+          { key: 'selectPlanLabel', label: 'Текст кнопки "Обрати тариф"' },
+          { key: 'resultLabel', label: 'Лейбл результату' },
+        ]}
+      />
+      {items.map((item: any, i: number) => (
+        <PricingItemEditor key={i} item={item} onSave={onSave} saving={saving} />
       ))}
     </div>
   );
@@ -586,16 +786,35 @@ const PricingItemEditor = ({ item, onSave, saving }: any) => {
         <Textarea value={form.features.join('\n')} onChange={(v) => setForm({...form, features: v.split('\n')})} />
       </div>
       <Input label="Результат" value={form.result_text} onChange={(v) => setForm({...form, result_text: v})} />
+      
+      <div className="border-t border-slate-200 pt-4 mt-4 space-y-4">
+        <h4 className="text-xs font-bold text-slate-400 uppercase tracking-widest">Контент модального вікна</h4>
+        <Input label="Заголовок модалки" value={form.modal_title} onChange={(v) => setForm({...form, modal_title: v})} />
+        <Textarea label="Підзаголовок модалки" value={form.modal_subtitle} onChange={(v) => setForm({...form, modal_subtitle: v})} />
+        <Input label="Підказка (Tip)" value={form.modal_tip} onChange={(v) => setForm({...form, modal_tip: v})} />
+      </div>
+
       <SaveButton onClick={() => onSave(form.id, form)} loading={saving} />
     </div>
   );
 };
 
-const ProcessEditor = ({ items, onSave, saving }: any) => {
+const ProcessEditor = ({ items, header, onSaveHeader, onSave, saving }: any) => {
   return (
     <div className="space-y-12">
-      {items.map((item: any) => (
-        <ProcessItemEditor key={item.id} item={item} onSave={onSave} saving={saving} />
+      <SectionHeaderEditor 
+        title="Заголовки секції Процес"
+        content={header}
+        onSave={onSaveHeader}
+        saving={saving}
+        fields={[
+          { key: 'title', label: 'Заголовок' },
+          { key: 'subtitle', label: 'Підзаголовок', type: 'textarea' },
+          { key: 'stepLabel', label: 'Лейбл "Крок"' },
+        ]}
+      />
+      {items.map((item: any, i: number) => (
+        <ProcessItemEditor key={i} item={item} onSave={onSave} saving={saving} />
       ))}
     </div>
   );
@@ -615,11 +834,21 @@ const ProcessItemEditor = ({ item, onSave, saving }: any) => {
   );
 };
 
-const ProblemsEditor = ({ items, onSave, saving }: any) => {
+const ProblemsEditor = ({ items, header, onSaveHeader, onSave, saving }: any) => {
   return (
     <div className="space-y-12">
-      {items.map((item: any) => (
-        <ProblemItemEditor key={item.id} item={item} onSave={onSave} saving={saving} />
+      <SectionHeaderEditor 
+        title="Заголовки секції Проблеми"
+        content={header}
+        onSave={onSaveHeader}
+        saving={saving}
+        fields={[
+          { key: 'title', label: 'Заголовок' },
+          { key: 'subtitle', label: 'Підзаголовок', type: 'textarea' },
+        ]}
+      />
+      {items.map((item: any, i: number) => (
+        <ProblemItemEditor key={i} item={item} onSave={onSave} saving={saving} />
       ))}
     </div>
   );
@@ -636,11 +865,21 @@ const ProblemItemEditor = ({ item, onSave, saving }: any) => {
   );
 };
 
-const BenefitsEditor = ({ items, onSave, saving }: any) => {
+const BenefitsEditor = ({ items, header, onSaveHeader, onSave, saving }: any) => {
   return (
     <div className="space-y-12">
-      {items.map((item: any) => (
-        <BenefitItemEditor key={item.id} item={item} onSave={onSave} saving={saving} />
+      <SectionHeaderEditor 
+        title="Заголовки секції Переваги"
+        content={header}
+        onSave={onSaveHeader}
+        saving={saving}
+        fields={[
+          { key: 'title', label: 'Заголовок' },
+          { key: 'subtitle', label: 'Підзаголовок', type: 'textarea' },
+        ]}
+      />
+      {items.map((item: any, i: number) => (
+        <BenefitItemEditor key={i} item={item} onSave={onSave} saving={saving} />
       ))}
     </div>
   );
@@ -658,12 +897,22 @@ const BenefitItemEditor = ({ item, onSave, saving }: any) => {
   );
 };
 
-const FAQEditor = ({ items, onSave, onDelete, onCreate, saving }: any) => {
+const FAQEditor = ({ items, header, onSaveHeader, onSave, onDelete, onCreate, saving }: any) => {
   const [showAdd, setShowAdd] = useState(false);
   const [newFaq, setNewFaq] = useState({ question: '', answer: '' });
 
   return (
     <div className="space-y-12">
+      <SectionHeaderEditor 
+        title="Заголовки секції FAQ"
+        content={header}
+        onSave={onSaveHeader}
+        saving={saving}
+        fields={[
+          { key: 'title', label: 'Заголовок' },
+          { key: 'subtitle', label: 'Підзаголовок', type: 'textarea' },
+        ]}
+      />
       <div className="flex justify-between items-center">
         <h3 className="text-xl font-bold text-slate-900">Список запитань</h3>
         <button 
@@ -697,8 +946,8 @@ const FAQEditor = ({ items, onSave, onDelete, onCreate, saving }: any) => {
       )}
 
       <div className="space-y-8">
-        {items.map((item: any) => (
-          <FAQItemEditor key={item.id} item={item} onSave={onSave} onDelete={onDelete} saving={saving} />
+        {items.map((item: any, i: number) => (
+          <FAQItemEditor key={i} item={item} onSave={onSave} onDelete={onDelete} saving={saving} />
         ))}
       </div>
     </div>

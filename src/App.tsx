@@ -54,7 +54,7 @@ const Navbar = ({ content }: { content: any }) => {
   }, []);
 
   const navLinks = [
-    { name: 'Портфоліо', href: '#cases' },
+    { name: 'Кейси', href: '#cases' },
     { name: 'Процес', href: '#process' },
     { name: 'Про мене', href: '#about' },
     { name: 'Контакти', href: '#contact' },
@@ -69,8 +69,8 @@ const Navbar = ({ content }: { content: any }) => {
 
         {/* Desktop Nav */}
         <div className="hidden md:flex items-center gap-8">
-          {navLinks.map((link) => (
-            <a key={link.name} href={link.href} className="text-sm font-medium text-slate-600 hover:text-accent transition-colors">
+          {navLinks.map((link, i) => (
+            <a key={i} href={link.href} className="text-sm font-medium text-slate-600 hover:text-accent transition-colors">
               {link.name}
             </a>
           ))}
@@ -95,9 +95,9 @@ const Navbar = ({ content }: { content: any }) => {
             className="absolute top-full left-0 right-0 bg-white border-t border-slate-100 p-6 shadow-xl md:hidden"
           >
             <div className="flex flex-col gap-6">
-              {navLinks.map((link) => (
+              {navLinks.map((link, i) => (
                 <a 
-                  key={link.name} 
+                  key={i} 
                   href={link.href} 
                   className="text-lg font-medium text-slate-900"
                   onClick={() => setIsMenuOpen(false)}
@@ -118,6 +118,7 @@ const Navbar = ({ content }: { content: any }) => {
 
 const Hero = ({ content, onOpenVideo }: { content: any, onOpenVideo: () => void }) => {
   const smoothTransition = { duration: 0.8, ease: [0.16, 1, 0.3, 1] };
+  const [isExpanded, setIsExpanded] = useState(false);
   
   // Animation settings for the sequential flow
   const stepDuration = 1.2; // Total time for one step (fade + flashes)
@@ -129,6 +130,11 @@ const Hero = ({ content, onOpenVideo }: { content: any, onOpenVideo: () => void 
     }, 7000); // Restart every 7 seconds (4 steps * 1.2s + pause)
     return () => clearInterval(interval);
   }, []);
+
+  const subtitle = content?.subtitle || 'Ваш сайт — це не просто картинка, а повноцінний відділ продажів 24/7.';
+  const lines = subtitle.split('\n');
+  const previewLines = lines.slice(0, 3).join('\n');
+  const hasMore = lines.length > 3;
   
   return (
     <section className="relative pt-32 pb-20 md:pt-40 md:pb-24 overflow-hidden">
@@ -143,9 +149,18 @@ const Hero = ({ content, onOpenVideo }: { content: any, onOpenVideo: () => void 
             <h1 className="text-4xl sm:text-5xl md:text-6xl font-extrabold text-slate-900 leading-[1.1] mb-6">
               {content?.title || 'Будую автономні системи залучення клієнтів'}
             </h1>
-            <p className="text-lg md:text-xl text-slate-600 mb-8 leading-relaxed max-w-xl">
-              {content?.subtitle || 'Ваш сайт — це не просто картинка, а повноцінний відділ продажів 24/7.'}
-            </p>
+            <div className="text-lg md:text-xl text-slate-600 mb-8 leading-relaxed max-w-xl whitespace-pre-line">
+              {isExpanded ? subtitle : previewLines}
+              {!isExpanded && hasMore && '...'}
+              {hasMore && (
+                <button 
+                  onClick={() => setIsExpanded(!isExpanded)}
+                  className="ml-2 text-accent font-bold hover:underline focus:outline-none"
+                >
+                  {isExpanded ? (content?.collapseLabel || 'згорнути') : (content?.readMoreLabel || 'докладніше')}
+                </button>
+              )}
+            </div>
             
             <div className="flex flex-col sm:flex-row gap-4 mb-10">
               <motion.a 
@@ -303,7 +318,7 @@ const Hero = ({ content, onOpenVideo }: { content: any, onOpenVideo: () => void 
   );
 };
 
-const Problem = ({ items }: { items: any[] }) => {
+const Problem = ({ items, content }: { items: any[], content: any }) => {
   return (
     <section className="section-padding bg-slate-900 text-white">
       <div className="container-custom">
@@ -314,8 +329,13 @@ const Problem = ({ items }: { items: any[] }) => {
           className="text-center mb-16"
         >
           <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold mb-6">
-            Чому сайт не працює?
+            {content?.title || 'Чому ваш маркетинг не приносить грошей?'}
           </h2>
+          {content?.subtitle && (
+            <p className="text-xl text-slate-400 max-w-2xl mx-auto">
+              {content.subtitle}
+            </p>
+          )}
         </motion.div>
 
         <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
@@ -339,7 +359,7 @@ const Problem = ({ items }: { items: any[] }) => {
   );
 };
 
-const Solution = ({ items }: { items: any[] }) => {
+const Solution = ({ items, content }: { items: any[], content: any }) => {
   const iconMap: any = {
     Layout: <Layout className="text-accent" size={32} />,
     Zap: <Zap className="text-accent" size={32} />,
@@ -351,8 +371,13 @@ const Solution = ({ items }: { items: any[] }) => {
       <div className="container-custom">
         <div className="text-center max-w-2xl mx-auto mb-16">
           <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold text-slate-900 mb-6">
-            Сайт — це система, а не просто дизайн
+            {content?.title || 'Ми перетворюємо ваш сайт на автономний відділ продажів'}
           </h2>
+          {content?.subtitle && (
+            <p className="text-xl text-slate-600">
+              {content.subtitle}
+            </p>
+          )}
         </div>
 
         <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
@@ -400,10 +425,10 @@ const SpeedSection = ({ content }: { content: any }) => {
             viewport={{ once: true }}
           >
             <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold mb-8 leading-tight">
-              {content?.title || 'Швидкість відповіді — це ваші гроші'}
+              {content?.title || 'Швидкість — це ваша головна конкурентна перевага'}
             </h2>
             <p className="text-lg text-slate-400 mb-8 leading-relaxed">
-              {content?.subtitle || 'Дослідження показують: якщо ви відповідаєте клієнту протягом 5 хвилин, ймовірність продажу в 10 разів вища.'}
+              {content?.subtitle || 'У 2024 році клієнт не чекає. Він купує там, де йому відповіли першим.'}
             </p>
             <div className="space-y-6">
               {content?.features?.map((item: any, i: number) => (
@@ -426,7 +451,10 @@ const SpeedSection = ({ content }: { content: any }) => {
             className="relative"
           >
             <div className="aspect-video rounded-[32px] bg-slate-800 border border-white/10 p-8 flex flex-col justify-center items-center text-center">
-              <div className="text-6xl font-black text-accent mb-4">{content?.statValue || '+400%'}</div>
+              <div className="text-6xl font-black mb-4">
+                <span className="text-white text-4xl mr-2">{content?.statPrefix || 'до'}</span>
+                <span className="text-accent">{content?.statValue || '+400%'}</span>
+              </div>
               <div className="text-xl font-bold mb-2">{content?.statLabel || 'Ріст конверсії в продаж'}</div>
               <p className="text-slate-500 max-w-xs">{content?.statDesc || 'при відповіді клієнту в перші 5 хвилин'}</p>
             </div>
@@ -437,10 +465,10 @@ const SpeedSection = ({ content }: { content: any }) => {
   );
 };
 
-const ROICalculator = () => {
+const ROICalculator = ({ content }: { content: any }) => {
   const [traffic, setTraffic] = useState(1000);
   const [conv, setConv] = useState(1);
-  const [check, setCheck] = useState(500);
+  const [check, setCheck] = useState(5000);
 
   const currentRevenue = traffic * (conv / 100) * check;
   const potentialRevenue = traffic * (5 / 100) * check; 
@@ -451,14 +479,16 @@ const ROICalculator = () => {
       <div className="container-custom">
         <div className="max-w-4xl mx-auto">
           <div className="text-center mb-12">
-            <h2 className="text-3xl font-bold text-slate-900 mb-4">Скільки грошей ви втрачаєте?</h2>
-            <p className="text-slate-600">Розрахуйте потенціал вашого бізнесу при переході на системний лендінг</p>
+            <h2 className="text-3xl font-bold text-slate-900 mb-4">{content?.title || 'Скільки грошей ви втрачаєте щомісяця?'}</h2>
+            <div className="text-slate-600 whitespace-pre-line">
+              {content?.description || 'Розрахуйте потенційний прибуток, який ви недоотримуєте через низьку конверсію.'}
+            </div>
           </div>
           
           <div className="grid md:grid-cols-2 gap-12 items-center bg-slate-50 p-8 md:p-12 rounded-[40px] border border-slate-100">
             <div className="space-y-8">
               <div>
-                <label className="block text-sm font-bold text-slate-700 mb-3 uppercase tracking-wider">Трафік на місяць</label>
+                <label className="block text-sm font-bold text-slate-700 mb-3 uppercase tracking-wider">{content?.labelTraffic || 'Трафік (кількість кліків)'}</label>
                 <input 
                   type="range" min="100" max="10000" step="100" 
                   value={traffic} onChange={(e) => setTraffic(Number(e.target.value))}
@@ -472,7 +502,7 @@ const ROICalculator = () => {
               </div>
               
               <div>
-                <label className="block text-sm font-bold text-slate-700 mb-3 uppercase tracking-wider">Поточна конверсія (%)</label>
+                <label className="block text-sm font-bold text-slate-700 mb-3 uppercase tracking-wider">{content?.labelConversion || 'Поточна конверсія (%)'}</label>
                 <input 
                   type="range" min="0.1" max="5" step="0.1" 
                   value={conv} onChange={(e) => setConv(Number(e.target.value))}
@@ -486,7 +516,7 @@ const ROICalculator = () => {
               </div>
 
               <div>
-                <label className="block text-sm font-bold text-slate-700 mb-3 uppercase tracking-wider">Середній чек ($)</label>
+                <label className="block text-sm font-bold text-slate-700 mb-3 uppercase tracking-wider">{content?.labelCheck || 'Середній чек (грн)'}</label>
                 <input 
                   type="number" 
                   value={check} onChange={(e) => setCheck(Number(e.target.value))}
@@ -498,27 +528,38 @@ const ROICalculator = () => {
             <div className="bg-slate-900 rounded-3xl p-8 text-white relative overflow-hidden">
               <div className="relative z-10">
                 <div className="mb-8">
-                  <div className="text-slate-400 text-sm mb-1">Поточний дохід:</div>
-                  <div className="text-2xl font-bold">${currentRevenue.toLocaleString()}</div>
+                  <div className="text-slate-400 text-sm mb-1">{content?.labelCurrentRevenue || 'Поточний дохід:'}</div>
+                  <div className="text-2xl font-bold">{currentRevenue.toLocaleString()} грн</div>
                 </div>
                 <div className="mb-8">
-                  <div className="text-slate-400 text-sm mb-1">Потенціал (при 5% конверсії):</div>
-                  <div className="text-4xl font-black text-accent">${potentialRevenue.toLocaleString()}</div>
+                  <div className="text-slate-400 text-sm mb-1">{content?.labelPotentialRevenue || 'Потенціал (при 5% конверсії):'}</div>
+                  <div className="text-4xl font-black text-accent">{potentialRevenue.toLocaleString()} грн</div>
                 </div>
                 <div className="pt-6 border-t border-white/10">
-                  <div className="text-accent text-sm font-bold uppercase tracking-widest mb-1">Ваш ріст:</div>
-                  <div className="text-3xl font-bold text-white">+{increase > 0 ? `$${increase.toLocaleString()}` : '$0'} / міс.</div>
+                  <div className="text-accent text-sm font-bold uppercase tracking-widest mb-1">{content?.labelLostProfit || 'Ваша недоотримана вигода:'}</div>
+                  <div className="text-3xl font-bold text-white">+{increase > 0 ? `${increase.toLocaleString()}` : '0'} грн / міс.</div>
                 </div>
               </div>
             </div>
           </div>
+          
+          {content?.example && (
+            <motion.div 
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              className="mt-12 p-6 bg-accent/5 border border-accent/10 rounded-3xl text-center italic text-slate-700 max-w-2xl mx-auto"
+            >
+              {content.example}
+            </motion.div>
+          )}
         </div>
       </div>
     </section>
   );
 };
 
-const CaseModal = ({ isOpen, onClose, caseData }: { isOpen: boolean, onClose: () => void, caseData: any }) => {
+const CaseModal = ({ isOpen, onClose, caseData, content }: { isOpen: boolean, onClose: () => void, caseData: any, content: any, key?: any }) => {
   if (!isOpen || !caseData) return null;
 
   return (
@@ -534,7 +575,7 @@ const CaseModal = ({ isOpen, onClose, caseData }: { isOpen: boolean, onClose: ()
         initial={{ opacity: 0, scale: 0.9, y: 20 }}
         animate={{ opacity: 1, scale: 1, y: 0 }}
         exit={{ opacity: 0, scale: 0.9, y: 20 }}
-        className="relative w-full max-w-5xl bg-white rounded-[40px] overflow-hidden shadow-2xl max-h-[90vh] overflow-y-auto scrollbar-hide"
+        className="relative w-full max-w-5xl bg-white rounded-[40px] shadow-2xl max-h-[90vh] overflow-y-auto scrollbar-hide"
       >
         <button 
           onClick={onClose}
@@ -562,11 +603,11 @@ const CaseModal = ({ isOpen, onClose, caseData }: { isOpen: boolean, onClose: ()
                 rel="noopener noreferrer"
                 className="btn-primary flex items-center justify-center gap-3 text-base py-4 px-6 shadow-blue-500/20 shadow-xl"
               >
-                <span>Відвідати сайт</span>
+                <span>{content?.visitSiteLabel || 'Відвідати сайт'}</span>
                 <ArrowRight size={20} />
               </a>
               <p className="text-xs text-center text-slate-400 font-medium uppercase tracking-widest">
-                Натисніть, щоб побачити результат наживо
+                {content?.visitSiteHint || 'Натисніть, щоб побачити результат наживо'}
               </p>
             </div>
           </div>
@@ -584,18 +625,18 @@ const CaseModal = ({ isOpen, onClose, caseData }: { isOpen: boolean, onClose: ()
             
             <div className="grid gap-10">
               <div className="relative pl-6 border-l-4 border-slate-100 hover:border-accent transition-colors">
-                <h4 className="text-sm font-bold text-slate-400 uppercase tracking-widest mb-3">Проблема</h4>
+                <h4 className="text-sm font-bold text-slate-400 uppercase tracking-widest mb-3">{content?.problemLabel || 'Проблема'}</h4>
                 <p className="text-slate-600 text-lg leading-relaxed">{caseData.detailed_problem || caseData.problem}</p>
               </div>
               
               <div className="relative pl-6 border-l-4 border-slate-100 hover:border-accent transition-colors">
-                <h4 className="text-sm font-bold text-slate-400 uppercase tracking-widest mb-3">Рішення</h4>
+                <h4 className="text-sm font-bold text-slate-400 uppercase tracking-widest mb-3">{content?.solutionLabel || 'Рішення'}</h4>
                 <p className="text-slate-600 text-lg leading-relaxed">{caseData.detailed_solution || caseData.solution}</p>
               </div>
 
               <div className="bg-gradient-to-br from-slate-900 to-slate-800 p-8 lg:p-10 rounded-[32px] text-white shadow-2xl relative overflow-hidden group">
                 <div className="absolute top-0 right-0 w-32 h-32 bg-accent/20 blur-3xl rounded-full -mr-16 -mt-16 transition-transform group-hover:scale-150" />
-                <h4 className="text-xs font-bold text-accent uppercase tracking-widest mb-4 relative z-10">Результат</h4>
+                <h4 className="text-xs font-bold text-accent uppercase tracking-widest mb-4 relative z-10">{content?.resultLabel || 'Результат'}</h4>
                 <div className="text-3xl lg:text-4xl font-black relative z-10 leading-tight">
                   {caseData.result}
                 </div>
@@ -607,7 +648,7 @@ const CaseModal = ({ isOpen, onClose, caseData }: { isOpen: boolean, onClose: ()
               className="mt-12 text-slate-400 hover:text-slate-900 font-bold text-sm uppercase tracking-widest transition-colors flex items-center justify-center gap-2 group"
             >
               <X size={16} className="transition-transform group-hover:rotate-90" />
-              <span>Закрити вікно</span>
+              <span>{content?.closeModalLabel || 'Закрити вікно'}</span>
             </button>
           </div>
         </div>
@@ -616,7 +657,7 @@ const CaseModal = ({ isOpen, onClose, caseData }: { isOpen: boolean, onClose: ()
   );
 };
 
-const Cases = ({ items, onSelectCase }: { items: any[], onSelectCase: (c: any) => void }) => {
+const Cases = ({ items, onSelectCase, content }: { items: any[], onSelectCase: (c: any) => void, content: any }) => {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [direction, setDirection] = useState(0);
 
@@ -658,8 +699,8 @@ const Cases = ({ items, onSelectCase }: { items: any[], onSelectCase: (c: any) =
     <section id="cases" className="section-padding bg-white overflow-hidden">
       <div className="container-custom">
         <div className="mb-16">
-          <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold text-slate-900 mb-4">Кейси</h2>
-          <p className="text-slate-600">Реальні проблеми та системні рішення</p>
+          <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold text-slate-900 mb-4">{content?.title || 'Результати, які можна виміряти в грошах'}</h2>
+          <p className="text-slate-600">{content?.subtitle || 'Кейси, де ми впровадили систему і вивели бізнес на новий рівень.'}</p>
         </div>
 
         <div className="relative h-[620px] md:h-[600px] pb-8">
@@ -719,7 +760,7 @@ const Cases = ({ items, onSelectCase }: { items: any[], onSelectCase: (c: any) =
                     onClick={() => onSelectCase(items[currentIndex])}
                     className="btn-primary w-full sm:w-auto px-8 py-4 text-base shadow-xl shadow-blue-500/20"
                   >
-                    Дивитись детальніше
+                    {content?.moreDetailsLabel || 'Дивитись детальніше'}
                   </button>
                 </div>
               </div>
@@ -729,7 +770,7 @@ const Cases = ({ items, onSelectCase }: { items: any[], onSelectCase: (c: any) =
         
         {/* Pagination Dots */}
         <div className="flex justify-center gap-2 mt-8">
-          {items.map((_, i) => (
+          {items.map((item, i) => (
             <button
               key={i}
               onClick={() => {
@@ -745,67 +786,131 @@ const Cases = ({ items, onSelectCase }: { items: any[], onSelectCase: (c: any) =
   );
 };
 
-const Process = ({ items }: { items: any[] }) => {
+const Process = ({ items, content }: { items: any[], content: any }) => {
+  const [currentIndex, setCurrentIndex] = useState(0);
+
+  const next = () => {
+    setCurrentIndex((prev) => (prev + 1) % items.length);
+  };
+
+  const prev = () => {
+    setCurrentIndex((prev) => (prev - 1 + items.length) % items.length);
+  };
+
   return (
-    <section id="process" className="section-padding bg-slate-50">
+    <section id="process" className="section-padding bg-slate-50 overflow-hidden">
       <div className="container-custom">
         <div className="text-center mb-16">
-          <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold text-slate-900 mb-4">Як ми будуємо вашу систему</h2>
-          <p className="text-slate-600">Від ідеї до автоматизованого відділу продажів</p>
+          <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold text-slate-900 mb-4">{content?.title || 'Як ми будуємо вашу систему'}</h2>
+          <p className="text-slate-600">{content?.subtitle || 'Від першого дзвінка до стабільного потоку заявок — всього 6 кроків.'}</p>
         </div>
 
-        <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-8">
+        {/* Desktop Grid */}
+        <div className="hidden lg:grid grid-cols-3 xl:grid-cols-6 gap-6">
           {items.map((step, i) => (
-            <div key={i} className="relative p-6 rounded-3xl hover:bg-white hover:shadow-lg transition-all duration-300 group">
-              <div className="text-6xl font-black text-slate-200 mb-6 group-hover:text-accent/20 transition-colors">{step.step_number}</div>
-              <h3 className="text-xl font-bold text-slate-900 mb-4">{step.title}</h3>
-              <p className="text-slate-500 leading-relaxed">{step.description}</p>
-            </div>
+            <motion.div 
+              key={i} 
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ delay: i * 0.1 }}
+              className="relative p-6 rounded-3xl bg-white border border-slate-100 hover:shadow-xl transition-all duration-300 group h-full flex flex-col"
+            >
+              <div className="text-4xl font-black text-slate-100 mb-4 group-hover:text-accent/20 transition-colors">{step.step_number}</div>
+              <h3 className="text-lg font-bold text-slate-900 mb-3 leading-tight">{step.title}</h3>
+              <p className="text-xs text-slate-500 leading-relaxed mt-auto">{step.description}</p>
+            </motion.div>
           ))}
+        </div>
+
+        {/* Mobile/Tablet Carousel */}
+        <div className="lg:hidden relative">
+          <div className="flex items-center justify-center gap-4 mb-8">
+            <button 
+              onClick={prev}
+              className="w-12 h-12 rounded-full bg-white shadow-md flex items-center justify-center text-slate-900 hover:bg-accent hover:text-white transition-all"
+            >
+              <ChevronLeft size={24} />
+            </button>
+            <div className="text-sm font-bold text-slate-400 uppercase tracking-widest">
+              {content?.stepLabel || 'Крок'} {currentIndex + 1} з {items.length}
+            </div>
+            <button 
+              onClick={next}
+              className="w-12 h-12 rounded-full bg-white shadow-md flex items-center justify-center text-slate-900 hover:bg-accent hover:text-white transition-all"
+            >
+              <ChevronRight size={24} />
+            </button>
+          </div>
+
+          <AnimatePresence mode="wait">
+            <motion.div
+              key={currentIndex}
+              initial={{ opacity: 0, x: 50 }}
+              animate={{ opacity: 1, x: 0 }}
+              exit={{ opacity: 0, x: -50 }}
+              transition={{ duration: 0.3 }}
+              className="bg-white p-8 rounded-[40px] shadow-xl border border-slate-100 text-center max-w-md mx-auto"
+            >
+              <div className="text-7xl font-black text-accent/10 mb-6">{items[currentIndex].step_number}</div>
+              <h3 className="text-2xl font-bold text-slate-900 mb-4">{items[currentIndex].title}</h3>
+              <p className="text-slate-600 leading-relaxed">{items[currentIndex].description}</p>
+            </motion.div>
+          </AnimatePresence>
+
+          <div className="flex justify-center gap-2 mt-8">
+            {items.map((_, i) => (
+              <button 
+                key={i}
+                onClick={() => setCurrentIndex(i)}
+                className={`w-2 h-2 rounded-full transition-all ${currentIndex === i ? 'w-8 bg-accent' : 'bg-slate-200'}`}
+              />
+            ))}
+          </div>
         </div>
       </div>
     </section>
   );
 };
 
-const Pricing = ({ items, onSelectPlan }: { items: any[], onSelectPlan: (p: any) => void }) => {
+const Pricing = ({ items, onSelectPlan, content }: { items: any[], onSelectPlan: (p: any) => void, content: any }) => {
   const [activePlanIndex, setActivePlanIndex] = useState<number | null>(
-    items.findIndex(p => p.featured) !== -1 ? items.findIndex(p => p.featured) : 0
+    items.findIndex(p => p.is_featured) !== -1 ? items.findIndex(p => p.is_featured) : 0
   );
 
   return (
     <section id="pricing" className="section-padding bg-slate-900 text-white">
       <div className="container-custom">
         <div className="text-center mb-16">
-          <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold mb-4">Формат роботи</h2>
-          <p className="text-slate-400">Оберіть рівень залученості, який потрібен вашому бізнесу</p>
+          <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold mb-4">{content?.title || 'Оберіть свій рівень масштабування'}</h2>
+          <p className="text-slate-400">{content?.subtitle || 'Ми підберемо рішення під ваші задачі: від швидкого старту до повного захоплення ринку.'}</p>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-8 items-stretch">
           {items.map((plan, i) => (
             <motion.div 
               key={i} 
               onMouseEnter={() => setActivePlanIndex(i)}
               whileHover={{ y: -10, scale: 1.02 }}
-              className={`relative p-8 rounded-[32px] border-2 transition-all duration-500 ${
+              className={`relative p-8 rounded-[32px] border-2 transition-all duration-500 flex flex-col h-full ${
                 activePlanIndex === i 
                   ? 'bg-slate-800 border-accent' 
                   : 'bg-slate-800/50 border-white/5'
               }`}
             >
-              {plan.featured && (
-                <div className="absolute -top-4 left-1/2 -translate-x-1/2 bg-accent text-white text-xs font-bold uppercase tracking-widest px-4 py-1 rounded-full">
-                  Популярно
+              {!!plan.is_featured && (
+                <div className="absolute -top-4 left-1/2 -translate-x-1/2 bg-accent text-white text-xs font-bold uppercase tracking-widest px-4 py-1 rounded-full whitespace-nowrap">
+                  {plan.label || 'популярно'}
                 </div>
               )}
               <div className="mb-8">
                 <span className="text-sm font-bold text-accent uppercase tracking-widest">{plan.label}</span>
                 <div className="flex items-baseline gap-1 mt-2">
                   <h3 className="text-4xl font-extrabold">{plan.price}</h3>
-                  <span className="text-slate-400 font-medium">/ проєкт</span>
+                  <span className="text-slate-400 font-medium">/ {plan.name}</span>
                 </div>
               </div>
-              <ul className="space-y-4 mb-8">
+              <ul className="space-y-4 mb-8 flex-grow">
                 {plan.features.map((f: string, j: number) => (
                   <li key={j} className="flex items-start gap-3 text-slate-300">
                     <CheckCircle2 size={18} className="text-accent mt-1 shrink-0" />
@@ -813,9 +918,9 @@ const Pricing = ({ items, onSelectPlan }: { items: any[], onSelectPlan: (p: any)
                   </li>
                 ))}
               </ul>
-              <div className="pt-8 border-t border-white/10">
-                <p className="text-sm font-semibold text-white mb-6">
-                  <span className="text-accent">Результат:</span> {plan.result_text}
+              <div className="pt-8 border-t border-white/10 mt-auto">
+                <p className="text-sm font-semibold text-white mb-6 min-h-[40px]">
+                  <span className="text-accent">{content?.resultLabel || 'Результат:'}</span> {plan.result}
                 </p>
                 <button 
                   onClick={() => onSelectPlan(plan)}
@@ -823,7 +928,7 @@ const Pricing = ({ items, onSelectPlan }: { items: any[], onSelectPlan: (p: any)
                     activePlanIndex === i ? 'bg-accent text-white' : 'bg-white/10 text-white hover:bg-white/20'
                   }`}
                 >
-                  Обрати цей формат
+                  {content?.selectPlanLabel || 'Обрати цей формат'}
                 </button>
               </div>
             </motion.div>
@@ -834,8 +939,45 @@ const Pricing = ({ items, onSelectPlan }: { items: any[], onSelectPlan: (p: any)
   );
 };
 
-const PricingModal = ({ isOpen, onClose, plan, contactContent }: { isOpen: boolean, onClose: () => void, plan: any, contactContent: any }) => {
+const PricingModal = ({ isOpen, onClose, plan, contactContent }: { isOpen: boolean, onClose: () => void, plan: any, contactContent: any, key?: any }) => {
+  const [formData, setFormData] = useState({ name: '', contact: '', comment: '' });
+  const [status, setStatus] = useState<'idle' | 'loading' | 'success' | 'error'>('idle');
+
   if (!isOpen || !plan) return null;
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!formData.name || !formData.contact) return;
+    
+    setStatus('loading');
+    try {
+      const response = await fetch('/api/contact', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          ...formData,
+          message: formData.comment,
+          plan: plan.name,
+          source: 'Pricing Modal'
+        })
+      });
+      
+      if (response.ok) {
+        setStatus('success');
+        setFormData({ name: '', contact: '', comment: '' });
+      } else {
+        setStatus('error');
+      }
+    } catch (err) {
+      setStatus('error');
+    }
+  };
+
+  const modalContent = {
+    title: plan.modal_title || contactContent?.pricingModalTitle || 'Обговоримо ваш проект?',
+    subtitle: plan.modal_subtitle || contactContent?.pricingModalSubtitle || 'Залиште контакти, і я зв\'яжуся з вами найближчим часом.',
+    tip: plan.modal_tip || null
+  };
 
   return (
     <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 sm:p-6">
@@ -850,7 +992,7 @@ const PricingModal = ({ isOpen, onClose, plan, contactContent }: { isOpen: boole
         initial={{ opacity: 0, scale: 0.9, y: 20 }}
         animate={{ opacity: 1, scale: 1, y: 0 }}
         exit={{ opacity: 0, scale: 0.9, y: 20 }}
-        className="relative w-full max-w-lg bg-white rounded-[40px] overflow-hidden shadow-2xl p-8 md:p-12"
+        className="relative w-full max-w-lg bg-white rounded-[40px] shadow-2xl p-8 md:p-12 max-h-[90vh] overflow-y-auto scrollbar-hide"
       >
         <button 
           onClick={onClose}
@@ -859,55 +1001,100 @@ const PricingModal = ({ isOpen, onClose, plan, contactContent }: { isOpen: boole
           <X size={24} />
         </button>
 
-        <div className="mb-8">
-          <div className="text-xs font-bold text-accent uppercase tracking-widest mb-2">{plan.label}</div>
-          <h2 className="text-2xl font-bold text-slate-900">Залишити заявку</h2>
-          <p className="text-slate-500 mt-2">Залиште ваші контакти, і ми зв'яжемося з вами найближчим часом.</p>
-        </div>
+        {status === 'success' ? (
+          <motion.div 
+            initial={{ opacity: 0, scale: 0.9 }}
+            animate={{ opacity: 1, scale: 1 }}
+            className="text-center py-8"
+          >
+            <div className="w-20 h-20 bg-green-100 text-green-600 rounded-full flex items-center justify-center mx-auto mb-6">
+              <CheckCircle2 size={40} />
+            </div>
+            <h3 className="text-2xl font-bold text-slate-900 mb-4">{contactContent?.successTitle || 'Дякуємо!'}</h3>
+            <p className="text-slate-600 mb-8">{contactContent?.successSubtitle || 'Ваша заявка прийнята. Я зв\'яжуся з вами протягом 15 хвилин.'}</p>
+            <button 
+              onClick={onClose}
+              className="btn-primary px-8 py-3"
+            >
+              {contactContent?.successButtonText || 'Закрити'}
+            </button>
+          </motion.div>
+        ) : (
+          <>
+            <div className="mb-8">
+              <div className="text-xs font-bold text-accent uppercase tracking-widest mb-2">{plan.label}</div>
+              <h2 className="text-2xl font-bold text-slate-900">{modalContent.title}</h2>
+              <p className="text-slate-500 mt-2">{modalContent.subtitle}</p>
+              
+              {modalContent.tip && (
+                <div className="mt-4 p-4 bg-accent/5 border border-accent/20 rounded-2xl">
+                  <p className="text-sm text-slate-700 font-medium">
+                    <span className="text-accent font-bold">{contactContent?.tipLabel || 'Порада:'}</span> {modalContent.tip}
+                  </p>
+                </div>
+              )}
+            </div>
 
-        <form className="space-y-6">
-          <div>
-            <label className="block text-sm font-bold text-slate-900 uppercase tracking-wider mb-2">{contactContent?.formNameLabel}</label>
-            <input 
-              type="text" 
-              placeholder="Ваше ім'я"
-              className="w-full px-6 py-4 bg-slate-50 border border-slate-200 rounded-2xl focus:ring-4 focus:ring-accent/10 focus:border-accent outline-none transition-all"
-            />
-          </div>
-          <div>
-            <label className="block text-sm font-bold text-slate-900 uppercase tracking-wider mb-2">{contactContent?.formContactLabel}</label>
-            <input 
-              type="text" 
-              placeholder="Telegram або Телефон"
-              className="w-full px-6 py-4 bg-slate-50 border border-slate-200 rounded-2xl focus:ring-4 focus:ring-accent/10 focus:border-accent outline-none transition-all"
-            />
-          </div>
-          <div>
-            <label className="block text-sm font-bold text-slate-900 uppercase tracking-wider mb-2">Коментар</label>
-            <textarea 
-              rows={3}
-              placeholder="Ваші побажання або запитання"
-              className="w-full px-6 py-4 bg-slate-50 border border-slate-200 rounded-2xl focus:ring-4 focus:ring-accent/10 focus:border-accent outline-none transition-all resize-none"
-            ></textarea>
-          </div>
-          <button type="submit" className="btn-primary w-full py-5 text-lg">
-            {contactContent?.formButtonText}
-          </button>
-        </form>
+            <form onSubmit={handleSubmit} className="space-y-6">
+              <div>
+                <label className="block text-sm font-bold text-slate-900 uppercase tracking-wider mb-2">{contactContent?.formNameLabel || 'Ваше ім\'я'}</label>
+                <input 
+                  type="text" 
+                  required
+                  placeholder={contactContent?.formNamePlaceholder || "Ваше ім'я"}
+                  value={formData.name}
+                  onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                  className="w-full px-6 py-4 bg-slate-50 border border-slate-200 rounded-2xl focus:ring-4 focus:ring-accent/10 focus:border-accent outline-none transition-all"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-bold text-slate-900 uppercase tracking-wider mb-2">{contactContent?.formContactLabel || 'Telegram або Телефон'}</label>
+                <input 
+                  type="text" 
+                  required
+                  placeholder={contactContent?.formContactPlaceholder || "Telegram або Телефон"}
+                  value={formData.contact}
+                  onChange={(e) => setFormData({ ...formData, contact: e.target.value })}
+                  className="w-full px-6 py-4 bg-slate-50 border border-slate-200 rounded-2xl focus:ring-4 focus:ring-accent/10 focus:border-accent outline-none transition-all"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-bold text-slate-900 uppercase tracking-wider mb-2">{contactContent?.formCommentLabel || 'Коментар'}</label>
+                <textarea 
+                  rows={3}
+                  placeholder={contactContent?.formCommentPlaceholder || "Ваші побажання або запитання"}
+                  value={formData.comment}
+                  onChange={(e) => setFormData({ ...formData, comment: e.target.value })}
+                  className="w-full px-6 py-4 bg-slate-50 border border-slate-200 rounded-2xl focus:ring-4 focus:ring-accent/10 focus:border-accent outline-none transition-all resize-none"
+                ></textarea>
+              </div>
+              {status === 'error' && (
+                <p className="text-red-500 text-sm font-bold">{contactContent?.errorText || 'Помилка при відправці. Спробуйте ще раз.'}</p>
+              )}
+              <button 
+                type="submit" 
+                disabled={status === 'loading'}
+                className="btn-primary w-full py-5 text-lg disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {status === 'loading' ? (contactContent?.formButtonLoadingText || 'Відправка...') : (contactContent?.formButtonText || 'Відправити запит')}
+              </button>
+            </form>
+          </>
+        )}
       </motion.div>
     </div>
   );
 };
 
-const FAQ = ({ items }: { items: any[] }) => {
+const FAQ = ({ items, content }: { items: any[], content: any }) => {
   const [openIndex, setOpenIndex] = useState<number | null>(null);
 
   return (
     <section id="faq" className="section-padding bg-slate-50">
       <div className="container-custom">
         <div className="text-center mb-16">
-          <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold text-slate-900 mb-4">Часті запитання</h2>
-          <p className="text-slate-600">Відповіді на те, що вас цікавить найбільше</p>
+          <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold text-slate-900 mb-4">{content?.title || 'Часті запитання'}</h2>
+          <p className="text-slate-600">{content?.subtitle || 'Відповіді на те, що зазвичай цікавить моїх клієнтів.'}</p>
         </div>
 
         <div className="max-w-3xl mx-auto space-y-4">
@@ -951,7 +1138,7 @@ const About = ({ content }: { content: any }) => {
         <div className="grid md:grid-cols-2 gap-16 items-center">
           <div className="relative">
             <div className="aspect-[4/5] rounded-[40px] overflow-hidden">
-              <img src={content?.image} alt="Roman" className="w-full h-full object-cover" />
+              <img src={content?.image} alt="Роман — архітектор систем" className="w-full h-full object-cover" />
             </div>
             <div className="absolute -bottom-8 -right-8 bg-accent text-white p-8 rounded-[32px] shadow-xl">
               <div className="text-4xl font-black mb-1">{content?.experienceValue}</div>
@@ -990,15 +1177,20 @@ const CTA = ({ content }: { content: any }) => {
             <div className="relative z-10 flex flex-col lg:flex-row items-center gap-12">
               <div className="lg:w-2/3 text-center lg:text-left">
                 <h2 className="text-3xl sm:text-4xl md:text-5xl font-black mb-6 leading-tight">
-                  {content?.title}
+                  {content?.title || 'Досить годувати Google даремно'}
                 </h2>
                 <p className="text-lg md:text-xl opacity-90 leading-relaxed">
-                  {content?.subtitle}
+                  {content?.subtitle || 'Кожен день без нормальної системи — це втрачені клієнти, які пішли до конкурентів.'}
                 </p>
+                {content?.additionalText && (
+                  <p className="text-sm opacity-70 mt-4 italic">
+                    {content.additionalText}
+                  </p>
+                )}
               </div>
               <div className="lg:w-1/3 w-full">
                 <a href="#contact" className="block w-full bg-white text-accent px-8 py-5 rounded-2xl font-black text-lg md:text-xl hover:scale-105 active:scale-95 transition-all shadow-xl hover:shadow-white/20 text-center">
-                  {content?.buttonText}
+                  {content?.buttonText || 'Обговорити мій проєкт'}
                 </a>
               </div>
             </div>
@@ -1015,31 +1207,30 @@ const Contacts = ({ content }: { content: any }) => {
   const [responseMsg, setResponseMsg] = useState('');
 
   const handleSubmit = async (e: React.FormEvent) => {
-  e.preventDefault();
-  if (!formData.name || !formData.contact) return;
-  setStatus('loading');
-  try {
-    const response = await fetch("https://hook.eu1.make.com/hc37q6huxwanpkovgw5xdk4clw7dxsbp", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json"
-      },
-      body: JSON.stringify({
-        name: formData.name,
-        contact: formData.contact,
-        comment: formData.message,
-        source: "portfolio_site"
-      })
-    });
-    const result = await response.text();
-    setStatus('success');
-    setResponseMsg("Заявка відправлена");
-    setFormData({ name: '', contact: '', message: '' });
-  } catch (err) {
-    setStatus('error');
-    setResponseMsg("Помилка при відправці");
-  }
-};
+    e.preventDefault();
+    if (!formData.name || !formData.contact) return;
+    
+    setStatus('loading');
+    try {
+      const response = await fetch('/api/contact', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(formData)
+      });
+      const result = await response.json();
+      if (response.ok) {
+        setStatus('success');
+        setResponseMsg(result.message);
+        setFormData({ name: '', contact: '', message: '' });
+      } else {
+        setStatus('error');
+        setResponseMsg(result.message || 'Помилка при відправці');
+      }
+    } catch (err) {
+      setStatus('error');
+      setResponseMsg('Помилка мережі. Спробуйте пізніше.');
+    }
+  };
 
   return (
     <section id="contact" className="section-padding bg-white">
@@ -1091,13 +1282,13 @@ const Contacts = ({ content }: { content: any }) => {
                 <div className="w-20 h-20 bg-green-100 text-green-600 rounded-full flex items-center justify-center mb-6">
                   <CheckCircle2 size={40} />
                 </div>
-                <h3 className="text-2xl font-bold text-slate-900 mb-4">Дякую!</h3>
-                <p className="text-slate-600 mb-8">{responseMsg}</p>
+                <h3 className="text-2xl font-bold text-slate-900 mb-4">{content?.successTitle || 'Дякуємо!'}</h3>
+                <p className="text-slate-600 mb-8">{responseMsg || content?.successSubtitle}</p>
                 <button 
                   onClick={() => setStatus('idle')}
                   className="text-accent font-bold hover:underline"
                 >
-                  Надіслати ще одну заявку
+                  {content?.sendAnotherLabel || 'Надіслати ще одну заявку'}
                 </button>
               </motion.div>
             ) : (
@@ -1142,9 +1333,9 @@ const Contacts = ({ content }: { content: any }) => {
                 >
                   {status === 'loading' ? (
                     <>
-                      <Loader2 className="animate-spin" size={20} /> Відправка...
+                      <Loader2 className="animate-spin" size={20} /> {content?.formButtonLoadingText || 'Відправка...'}
                     </>
-                  ) : content?.formButtonText}
+                  ) : (content?.formButtonText || 'Відправити запит')}
                 </button>
               </form>
             )}
@@ -1164,7 +1355,7 @@ const Footer = ({ content }: { content: any }) => {
         <div className="flex gap-6">
           <a href={content?.telegramLink} className="text-slate-400 hover:text-accent transition-colors flex items-center gap-2">
             <Send size={18} />
-            Telegram
+            {content?.telegramLabel || 'Telegram'}
           </a>
         </div>
       </div>
@@ -1174,7 +1365,7 @@ const Footer = ({ content }: { content: any }) => {
 
 // --- Main App Component ---
 
-const VideoModal = ({ isOpen, onClose, videoUrl }: { isOpen: boolean, onClose: () => void, videoUrl: string }) => {
+const VideoModal = ({ isOpen, onClose, videoUrl }: { isOpen: boolean, onClose: () => void, videoUrl: string, key?: any }) => {
   if (!isOpen) return null;
 
   return (
@@ -1275,40 +1466,46 @@ const PublicSite = () => {
         content={data.content.hero || {}} 
         onOpenVideo={() => setIsVideoModalOpen(true)}
       />
-      <Problem items={data.problems || []} />
-      <Solution items={data.benefits || []} />
+      <Problem items={data.problems || []} content={data.content.problems_header || {}} />
+      <Solution items={data.benefits || []} content={data.content.benefits_header || {}} />
       <SpeedSection content={data.content.speed_roi || {}} />
-      <ROICalculator />
-      <Cases items={data.cases || []} onSelectCase={(c) => setSelectedCase(c)} />
-      <Process items={data.process || []} />
-      <Pricing items={data.pricing || []} onSelectPlan={(p) => setSelectedPlan(p)} />
-      <FAQ items={data.faq || []} />
+      <ROICalculator content={data.content.speed_roi || {}} />
+      <Cases items={data.cases || []} onSelectCase={(c) => setSelectedCase(c)} content={data.content.cases_header || {}} />
+      <Process items={data.process || []} content={data.content.process_header || {}} />
+      <Pricing items={data.pricing || []} onSelectPlan={(p) => setSelectedPlan(p)} content={data.content.pricing_header || {}} />
+      <FAQ items={data.faq || []} content={data.content.faq_header || {}} />
       <About content={data.content.about || {}} />
       <CTA content={data.content.cta || {}} />
       <Contacts content={data.content.contacts || {}} />
       <Footer content={data.content.footer || {}} />
       
-      <AnimatePresence>
+      <AnimatePresence mode="wait">
         {selectedCase && (
           <CaseModal 
+            key={`case-${selectedCase.id}`}
             isOpen={!!selectedCase} 
             onClose={() => setSelectedCase(null)} 
             caseData={selectedCase} 
+            content={data.content.cases_header || {}}
           />
         )}
         {selectedPlan && (
           <PricingModal 
+            key={`plan-${selectedPlan.id || selectedPlan.name}`}
             isOpen={!!selectedPlan} 
             onClose={() => setSelectedPlan(null)} 
             plan={selectedPlan}
             contactContent={data.content.contacts}
           />
         )}
-        <VideoModal 
-          isOpen={isVideoModalOpen} 
-          onClose={() => setIsVideoModalOpen(false)} 
-          videoUrl={data.content.hero?.videoUrl || ''} 
-        />
+        {isVideoModalOpen && (
+          <VideoModal 
+            key="video-modal"
+            isOpen={isVideoModalOpen} 
+            onClose={() => setIsVideoModalOpen(false)} 
+            videoUrl={data.content.hero?.videoUrl || ''} 
+          />
+        )}
       </AnimatePresence>
     </div>
   );
