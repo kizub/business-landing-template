@@ -124,6 +124,20 @@ export function initDb() {
     )
   `).run();
 
+  // Leads table
+  db.prepare(`
+    CREATE TABLE IF NOT EXISTS leads (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      name TEXT NOT NULL,
+      contact TEXT NOT NULL,
+      message TEXT,
+      plan TEXT,
+      source TEXT,
+      status TEXT DEFAULT 'new', -- new, contacted, closed
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+    )
+  `).run();
+
   // Seed initial admin if not exists
   const adminExists = db.prepare('SELECT * FROM users WHERE username = ?').get('admin');
   if (!adminExists) {

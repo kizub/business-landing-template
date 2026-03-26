@@ -193,4 +193,40 @@ router.delete("/cases/:id", authenticateToken, (req, res) => {
   }
 });
 
+// --- ЛІДИ (Заявки) ---
+
+// Отримати всі ліди
+router.get("/leads/all", authenticateToken, (req, res) => {
+  try {
+    const leads = db.prepare("SELECT * FROM leads ORDER BY created_at DESC").all();
+    res.json(leads);
+  } catch (err) {
+    res.status(500).json({ error: "Помилка при отриманні лідів" });
+  }
+});
+
+// Оновити статус ліда
+router.put("/leads/:id/status", authenticateToken, (req, res) => {
+  const { id } = req.params;
+  const { status } = req.body;
+  
+  try {
+    db.prepare("UPDATE leads SET status = ? WHERE id = ?").run(status, id);
+    res.json({ message: "Статус ліда оновлено" });
+  } catch (err) {
+    res.status(500).json({ error: "Помилка при оновленні статусу" });
+  }
+});
+
+// Видалити лід
+router.delete("/leads/:id", authenticateToken, (req, res) => {
+  const { id } = req.params;
+  try {
+    db.prepare("DELETE FROM leads WHERE id = ?").run(id);
+    res.json({ message: "Лід видалено" });
+  } catch (err) {
+    res.status(500).json({ error: "Помилка при видаленні ліда" });
+  }
+});
+
 export default router;

@@ -1215,7 +1215,10 @@ const Contacts = ({ content }: { content: any }) => {
       const response = await fetch('/api/contact', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(formData)
+        body: JSON.stringify({
+          ...formData,
+          source: 'Main Contact Form'
+        })
       });
       const result = await response.json();
       if (response.ok) {

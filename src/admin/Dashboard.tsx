@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { logout, getContent, updateSection, updateCase, createCase, deleteCase, updatePricing, updateProcess, updateProblem, updateBenefit, updateFaq, createFaq, deleteFaq, uploadFile } from '../services/api';
+import { logout, getContent, updateSection, updateCase, createCase, deleteCase, updatePricing, updateProcess, updateProblem, updateBenefit, updateFaq, createFaq, deleteFaq, uploadFile, getLeads, updateLeadStatus, deleteLead } from '../services/api';
 import { 
   Layout, 
   LogOut, 
@@ -22,7 +22,12 @@ import {
   Phone,
   Home,
   Monitor,
-  Play
+  Play,
+  Mail,
+  Calendar,
+  Filter,
+  CheckCircle,
+  Clock
 } from 'lucide-react';
 
 interface DashboardProps {
@@ -30,13 +35,15 @@ interface DashboardProps {
 }
 
 const Dashboard: React.FC<DashboardProps> = ({ onLogout }) => {
-  const [activeTab, setActiveTab] = useState('hero');
+  const [activeTab, setActiveTab] = useState('leads');
   const [data, setData] = useState<any>(null);
+  const [leads, setLeads] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState({ text: '', type: '' });
 
   const tabs = [
+    { id: 'leads', name: 'Leads', icon: <Mail size={20} /> },
     { id: 'hero', name: 'Hero', icon: <Home size={20} /> },
     { id: 'problems', name: 'Problems', icon: <AlertCircle size={20} /> },
     { id: 'benefits', name: 'Benefits', icon: <Zap size={20} /> },
@@ -59,8 +66,12 @@ const Dashboard: React.FC<DashboardProps> = ({ onLogout }) => {
   const fetchData = async () => {
     setLoading(true);
     try {
-      const response = await getContent();
-      setData(response.data);
+      const [contentRes, leadsRes] = await Promise.all([
+        getContent(),
+        getLeads()
+      ]);
+      setData(contentRes.data);
+      setLeads(leadsRes.data);
     } catch (err) {
       console.error('Failed to fetch content', err);
     } finally {
@@ -153,6 +164,27 @@ const Dashboard: React.FC<DashboardProps> = ({ onLogout }) => {
     }
   };
 
+  const handleUpdateLeadStatus = async (id: number, status: string) => {
+    try {
+      await updateLeadStatus(id, status);
+      showMessage('Статус оновлено');
+      fetchData();
+    } catch (err) {
+      showMessage('Помилка при оновленні статусу', 'error');
+    }
+  };
+
+  const handleDeleteLead = async (id: number) => {
+    if (!window.confirm('Ви впевнені, що хочете видалити цю заявку?')) return;
+    try {
+      await deleteLead(id);
+      showMessage('Заявку видалено');
+      fetchData();
+    } catch (err) {
+      showMessage('Помилка при видаленні', 'error');
+    }
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen bg-slate-50 flex items-center justify-center">
@@ -221,6 +253,13 @@ const Dashboard: React.FC<DashboardProps> = ({ onLogout }) => {
 
           {/* Editor Area */}
           <div className="bg-white rounded-[32px] p-8 shadow-sm border border-slate-100">
+            {activeTab === 'leads' && (
+              <LeadsEditor 
+                leads={leads} 
+                onUpdateStatus={handleUpdateLeadStatus}
+                onDelete={handleDeleteLead}
+              />
+            )}
             {activeTab === 'hero' && (
               <HeroEditor 
                 content={data.content.hero} 
@@ -335,6 +374,110 @@ const Dashboard: React.FC<DashboardProps> = ({ onLogout }) => {
           </div>
         </div>
       </div>
+    </div>
+  );
+};
+
+const LeadsEditor = ({ leads, onUpdateStatus, onDelete }: { leads: any[], onUpdateStatus: (id: number, status: string) => void, onDelete: (id: number) => void }) => {
+  const [filter, setFilter] = useState('all');
+
+  const filteredLeads = leads.filter(lead => {
+    if (filter === 'all') return true;
+    return lead.status === filter;
+  });
+
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case 'new': return 'bg-blue-100 text-blue-600';
+      case 'contacted': return 'bg-yellow-100 text-yellow-600';
+      case 'closed': return 'bg-green-100 text-green-600';
+      default: return 'bg-slate-100 text-slate-600';
+    }
+  };
+
+  return (
+    <div className="space-y-6">
+      <div className="flex items-center justify-between mb-6">
+        <h3 className="text-xl font-bold text-slate-900">Заявки ({leads.length})</h3>
+        <div className="flex items-center gap-2">
+          <Filter size={18} className="text-slate-400" />
+          <select 
+            value={filter}
+            onChange={(e) => setFilter(e.target.value)}
+            className="bg-slate-50 border border-slate-200 rounded-lg px-3 py-1.5 text-sm outline-none focus:border-accent"
+          >
+            <option value="all">Всі</option>
+            <option value="new">Нові</option>
+            <option value="contacted">В роботі</option>
+            <option value="closed">Закриті</option>
+          </select>
+        </div>
+      </div>
+
+      {filteredLeads.length === 0 ? (
+        <div className="text-center py-20 bg-slate-50 rounded-3xl border-2 border-dashed border-slate-200">
+          <Mail className="mx-auto text-slate-300 mb-4" size={48} />
+          <p className="text-slate-500 font-medium">Заявок поки немає</p>
+        </div>
+      ) : (
+        <div className="space-y-4">
+          {filteredLeads.map((lead) => (
+            <div key={lead.id} className="p-6 bg-slate-50 rounded-3xl border border-slate-100 hover:border-accent/30 transition-all group">
+              <div className="flex flex-wrap items-start justify-between gap-4 mb-4">
+                <div className="flex items-center gap-4">
+                  <div className="w-12 h-12 bg-white rounded-2xl flex items-center justify-center text-slate-400 border border-slate-100">
+                    <User size={24} />
+                  </div>
+                  <div>
+                    <h4 className="font-bold text-slate-900 text-lg">{lead.name}</h4>
+                    <div className="flex items-center gap-3 text-sm text-slate-500">
+                      <span className="flex items-center gap-1"><Phone size={14} /> {lead.contact}</span>
+                      <span className="flex items-center gap-1"><Calendar size={14} /> {new Date(lead.created_at).toLocaleDateString()}</span>
+                    </div>
+                  </div>
+                </div>
+                <div className="flex items-center gap-2">
+                  <select 
+                    value={lead.status}
+                    onChange={(e) => onUpdateStatus(lead.id, e.target.value)}
+                    className={`px-3 py-1.5 rounded-lg text-xs font-bold uppercase tracking-wider outline-none border-none cursor-pointer ${getStatusColor(lead.status)}`}
+                  >
+                    <option value="new">Нова</option>
+                    <option value="contacted">В роботі</option>
+                    <option value="closed">Закрита</option>
+                  </select>
+                  <button 
+                    onClick={() => onDelete(lead.id)}
+                    className="p-2 text-slate-400 hover:text-red-500 transition-colors"
+                  >
+                    <Trash2 size={18} />
+                  </button>
+                </div>
+              </div>
+              
+              <div className="bg-white p-4 rounded-2xl border border-slate-100 space-y-3">
+                {lead.plan && (
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs font-bold text-slate-400 uppercase tracking-widest">Тариф:</span>
+                    <span className="text-sm font-bold text-accent">{lead.plan}</span>
+                  </div>
+                )}
+                {lead.source && (
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs font-bold text-slate-400 uppercase tracking-widest">Джерело:</span>
+                    <span className="text-sm text-slate-600">{lead.source}</span>
+                  </div>
+                )}
+                {lead.message && (
+                  <div className="pt-2 border-t border-slate-50">
+                    <p className="text-slate-700 text-sm leading-relaxed">{lead.message}</p>
+                  </div>
+                )}
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
     </div>
   );
 };

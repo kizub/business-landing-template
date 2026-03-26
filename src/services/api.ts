@@ -26,6 +26,10 @@ export const deleteCase = (id: number) => api.delete(`/content/cases/${id}`);
 export const createFaq = (data: any) => api.post('/content/faq', data);
 export const deleteFaq = (id: number) => api.delete(`/content/faq/${id}`);
 
+export const getLeads = () => api.get('/content/leads/all');
+export const updateLeadStatus = (id: number, status: string) => api.put(`/content/leads/${id}/status`, { status });
+export const deleteLead = (id: number) => api.delete(`/content/leads/${id}`);
+
 export const uploadFile = (file: File) => {
   const formData = new FormData();
   formData.append('file', file);
