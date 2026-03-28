@@ -159,17 +159,28 @@ export function initDb() {
   const envUsername = process.env.ADMIN_USERNAME || 'admin';
   const envPassword = process.env.ADMIN_PASSWORD || 'admin123';
   
+  // Ensure the environment-defined admin exists
   const adminExists = db.prepare('SELECT * FROM users WHERE username = ?').get(envUsername) as any;
   const hashedPassword = bcrypt.hashSync(envPassword, 10);
   
   if (!adminExists) {
-    // If we changed username in secrets, let's make sure we don't have multiple admins unless intended
-    // For simplicity, we just ensure the one from env exists and has the right password
     db.prepare('INSERT OR REPLACE INTO users (username, password) VALUES (?, ?)').run(envUsername, hashedPassword);
     console.log(`Admin user '${envUsername}' ensured in database.`);
   } else {
     db.prepare('UPDATE users SET password = ? WHERE username = ?').run(hashedPassword, envUsername);
     console.log(`Password for '${envUsername}' updated from environment.`);
+  }
+
+  // Fallback: Also ensure 'admin' exists with 'admin123' if it's different from env
+  if (envUsername !== 'admin') {
+    const fallbackExists = db.prepare('SELECT * FROM users WHERE username = ?').get('admin') as any;
+    const fallbackHash = bcrypt.hashSync('admin123', 10);
+    if (!fallbackExists) {
+      db.prepare('INSERT INTO users (username, password) VALUES (?, ?)').run('admin', fallbackHash);
+    } else {
+      db.prepare('UPDATE users SET password = ? WHERE username = ?').run(fallbackHash, 'admin');
+    }
+    console.log("Fallback admin 'admin' with 'admin123' also ensured.");
   }
 
   seedInitialContent();
