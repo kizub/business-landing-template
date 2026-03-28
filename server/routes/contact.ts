@@ -8,8 +8,8 @@ router.post("/", async (req, res) => {
   const { name, contact, message, plan, source, recaptchaToken } = req.body;
 
   // reCAPTCHA verification
-  const secretKey = '6LeqkJssAAAAAJ575FSz-18ikpkwsw_ysd6k5M3u';
-  if (recaptchaToken) {
+  const secretKey = process.env.RECAPTCHA_SECRET_KEY;
+  if (recaptchaToken && secretKey) {
     try {
       const recaptchaRes = await axios.post(
         `https://www.google.com/recaptcha/api/siteverify?secret=${secretKey}&response=${recaptchaToken}`
@@ -40,7 +40,7 @@ router.post("/", async (req, res) => {
   }
 
   // 2. Send to Webhook (Make.com / Telegram)
-  const webhookUrl = process.env.MAKE_WEBHOOK_URL || "https://hook.eu1.make.com/hc37q6huxwanpkovgw5xdk4clw7dxsbp";
+  const webhookUrl = process.env.MAKE_WEBHOOK_URL;
   console.log("Attempting to send to webhook. URL used:", webhookUrl);
 
   if (webhookUrl) {

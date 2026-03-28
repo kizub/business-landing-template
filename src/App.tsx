@@ -1107,7 +1107,7 @@ const PricingModal = ({ isOpen, onClose, plan, contactContent }: { isOpen: boole
     setStatus('loading');
     try {
       let recaptchaToken = null;
-      const siteKey = '6LeqkJssAAAAAO5Icslio7icxjfTEaGkN63z-a1S';
+      const siteKey = import.meta.env.VITE_RECAPTCHA_SITE_KEY;
       if ((window as any).grecaptcha) {
         recaptchaToken = await new Promise<string>((resolve) => {
           (window as any).grecaptcha.ready(() => {
@@ -1381,7 +1381,7 @@ const Contacts = ({ content }: { content: any }) => {
     setStatus('loading');
     try {
       let recaptchaToken = null;
-      const siteKey = '6LeqkJssAAAAAO5Icslio7icxjfTEaGkN63z-a1S';
+      const siteKey = import.meta.env.VITE_RECAPTCHA_SITE_KEY;
       if ((window as any).grecaptcha) {
         recaptchaToken = await new Promise<string>((resolve) => {
           (window as any).grecaptcha.ready(() => {

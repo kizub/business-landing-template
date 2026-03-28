@@ -5,7 +5,10 @@ import db from "../database.js";
 import { authenticateToken } from "../middleware/auth.js";
 
 const router = express.Router();
-const JWT_SECRET = process.env.JWT_SECRET || "your_super_secret_key_change_this";
+const JWT_SECRET = process.env.JWT_SECRET;
+if (!JWT_SECRET) {
+  console.warn("JWT_SECRET is not defined in environment variables. Authentication may fail.");
+}
 
 // ПУБЛІЧНИЙ: Вхід адміністратора
 router.post("/login", (req, res) => {
