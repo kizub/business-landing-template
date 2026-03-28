@@ -27,59 +27,66 @@ router.post("/", async (req, res) => {
     return res.status(400).json({ message: "Name and contact are required" });
   }
 
-  // 1. Save to Database (Fallback)
+  // 1. Save to Database (Primary)
+  let leadId: number | string | null = null;
   try {
-    db.prepare(`
+    const result = await db.run(`
       INSERT INTO leads (name, contact, message, plan, source)
       VALUES (?, ?, ?, ?, ?)
-    `).run(name, contact, message || "", plan || null, source || "Website Contact Form");
-    console.log("Lead saved to database successfully");
+    `, [name, contact, message || "", plan || null, source || "Website Contact Form"]);
+    leadId = result.lastInsertRowid || "new";
+    console.log(`Lead saved to database successfully. ID: ${leadId}`);
   } catch (dbError) {
     console.error("Error saving lead to database:", dbError);
-    // We continue even if DB save fails, though it shouldn't
+    // We continue to try webhook even if DB fails
   }
 
-  // 2. Send to Webhook (Make.com / Telegram)
+  // 2. Send to Webhook (Make.com / Telegram) - Run in background to not block user
   const webhookUrl = process.env.MAKE_WEBHOOK_URL?.trim();
-  console.log("Attempting to send to webhook. URL used:", webhookUrl ? "URL is defined" : "URL is NOT defined");
-
+  
   if (webhookUrl && webhookUrl.startsWith('http')) {
-    try {
-      console.log("Sending data to webhook...");
-      const webhookResponse = await axios.post(webhookUrl, {
-        name: name,
-        contact: contact,
-        phone: contact,
-        telegram: contact,
-        message: message || "",
-        comment: message || "",
-        plan: plan || "Not specified",
-        source: source || "Website Contact Form",
-        timestamp: new Date().toISOString()
-      }, {
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        timeout: 8000 // 8 second timeout
-      });
-      console.log("Data sent to Make.com webhook successfully. Response status:", webhookResponse.status);
-    } catch (error: any) {
-      console.error("Error sending data to Make.com webhook:");
-      if (error.response) {
-        console.error("Response data:", error.response.data);
-        console.error("Response status:", error.response.status);
-      } else if (error.request) {
-        console.error("No response received from webhook (timeout or network error)");
-      } else {
-        console.error("Error message:", error.message);
+    // Fire and forget (with logging)
+    (async () => {
+      try {
+        console.log(`[Background] Sending lead ${leadId} to webhook: ${webhookUrl}`);
+        const payload = {
+          id: leadId,
+          name: name,
+          contact: contact,
+          phone: contact,
+          telegram: contact,
+          message: message || "",
+          comment: message || "",
+          plan: plan || "Not specified",
+          source: source || "Website Contact Form",
+          timestamp: new Date().toISOString(),
+          url: req.headers.referer || "unknown"
+        };
+        
+        const webhookResponse = await axios.post(webhookUrl, payload, {
+          headers: { 'Content-Type': 'application/json' },
+          timeout: 10000 // 10 second timeout for background task
+        });
+        
+        console.log(`[Background] Webhook success for lead ${leadId}. Status: ${webhookResponse.status}`);
+      } catch (error: any) {
+        console.error(`[Background] Webhook error for lead ${leadId}:`);
+        if (error.response) {
+          console.error("Status:", error.response.status);
+          console.error("Data:", error.response.data);
+        } else {
+          console.error("Message:", error.message);
+        }
       }
-      // We don't return error to user, as lead is already saved in DB
-    }
+    })();
   } else {
-    console.warn("MAKE_WEBHOOK_URL is not defined or invalid in environment variables.");
+    console.warn("MAKE_WEBHOOK_URL is not defined or invalid. Skipping webhook.");
   }
 
-  return res.json({ message: "Заявка отримана! Я зв'яжуся з вами найближчим часом." });
+  return res.json({ 
+    success: true,
+    message: "Заявка отримана! Я зв'яжуся з вами найближчим часом." 
+  });
 });
 
 export default router;

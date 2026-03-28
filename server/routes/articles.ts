@@ -5,14 +5,14 @@ import { authenticateToken } from '../middleware/auth.js';
 const router = express.Router();
 
 // Public: Get all published articles
-router.get('/', (req, res) => {
+router.get('/', async (req, res) => {
   try {
-    const articles = db.prepare(`
+    const articles = await db.all(`
       SELECT id, slug, title, excerpt, image, category, published_at 
       FROM articles 
       WHERE is_published = 1 
       ORDER BY published_at DESC
-    `).all();
+    `);
     res.json(articles);
   } catch (error) {
     res.status(500).json({ message: 'Error fetching articles' });
@@ -20,9 +20,9 @@ router.get('/', (req, res) => {
 });
 
 // Public: Get single article by slug
-router.get('/:slug', (req, res) => {
+router.get('/:slug', async (req, res) => {
   try {
-    const article = db.prepare('SELECT * FROM articles WHERE slug = ? AND is_published = 1').get(req.params.slug);
+    const article = await db.get('SELECT * FROM articles WHERE slug = ? AND is_published = 1', [req.params.slug]);
     if (!article) return res.status(404).json({ message: 'Article not found' });
     res.json(article);
   } catch (error) {
@@ -31,9 +31,9 @@ router.get('/:slug', (req, res) => {
 });
 
 // Admin: Get all articles (including drafts)
-router.get('/admin/all', authenticateToken, (req, res) => {
+router.get('/admin/all', authenticateToken, async (req, res) => {
   try {
-    const articles = db.prepare('SELECT * FROM articles ORDER BY created_at DESC').all();
+    const articles = await db.all('SELECT * FROM articles ORDER BY created_at DESC');
     res.json(articles);
   } catch (error) {
     res.status(500).json({ message: 'Error fetching articles' });
@@ -41,18 +41,19 @@ router.get('/admin/all', authenticateToken, (req, res) => {
 });
 
 // Admin: Create article
-router.post('/', authenticateToken, (req, res) => {
+router.post('/', authenticateToken, async (req, res) => {
   const { title, slug, excerpt, content, image, category, is_published } = req.body;
   try {
     const published_at = is_published ? new Date().toISOString() : null;
-    const result = db.prepare(`
+    const result = await db.run(`
       INSERT INTO articles (title, slug, excerpt, content, image, category, is_published, published_at)
       VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-    `).run(title, slug, excerpt, content, image, category, is_published ? 1 : 0, published_at);
+    `, [title, slug, excerpt, content, image, category, is_published ? 1 : 0, published_at]);
     
     res.json({ id: result.lastInsertRowid });
   } catch (error: any) {
-    if (error.code === 'SQLITE_CONSTRAINT_UNIQUE') {
+    // SQLite: SQLITE_CONSTRAINT_UNIQUE, Postgres: 23505
+    if (error.code === 'SQLITE_CONSTRAINT_UNIQUE' || error.code === '23505') {
       return res.status(400).json({ message: 'Slug already exists' });
     }
     res.status(500).json({ message: 'Error creating article' });
@@ -60,10 +61,12 @@ router.post('/', authenticateToken, (req, res) => {
 });
 
 // Admin: Update article
-router.put('/:id', authenticateToken, (req, res) => {
+router.put('/:id', authenticateToken, async (req, res) => {
   const { title, slug, excerpt, content, image, category, is_published } = req.body;
   try {
-    const current = db.prepare('SELECT is_published, published_at FROM articles WHERE id = ?').get(req.params.id) as any;
+    const current = await db.get('SELECT is_published, published_at FROM articles WHERE id = ?', [req.params.id]) as any;
+    if (!current) return res.status(404).json({ message: 'Article not found' });
+    
     let published_at = current.published_at;
     
     if (is_published && !current.is_published) {
@@ -72,11 +75,11 @@ router.put('/:id', authenticateToken, (req, res) => {
       published_at = null;
     }
 
-    db.prepare(`
+    await db.run(`
       UPDATE articles 
       SET title = ?, slug = ?, excerpt = ?, content = ?, image = ?, category = ?, is_published = ?, published_at = ?, updated_at = CURRENT_TIMESTAMP
       WHERE id = ?
-    `).run(title, slug, excerpt, content, image, category, is_published ? 1 : 0, published_at, req.params.id);
+    `, [title, slug, excerpt, content, image, category, is_published ? 1 : 0, published_at, req.params.id]);
     
     res.json({ success: true });
   } catch (error) {
@@ -85,9 +88,9 @@ router.put('/:id', authenticateToken, (req, res) => {
 });
 
 // Admin: Delete article
-router.delete('/:id', authenticateToken, (req, res) => {
+router.delete('/:id', authenticateToken, async (req, res) => {
   try {
-    db.prepare('DELETE FROM articles WHERE id = ?').run(req.params.id);
+    await db.run('DELETE FROM articles WHERE id = ?', [req.params.id]);
     res.json({ success: true });
   } catch (error) {
     res.status(500).json({ message: 'Error deleting article' });

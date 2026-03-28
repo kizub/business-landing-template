@@ -5,175 +5,215 @@ import { authenticateToken } from "../middleware/auth.js";
 const router = express.Router();
 
 // ПУБЛІЧНИЙ: Отримання всього контенту для сайту
-router.get("/", (req, res) => {
-  const siteContent = db.prepare("SELECT section_key, content_json FROM site_content").all() as any[];
-  const cases = db.prepare("SELECT * FROM cases WHERE is_active = 1").all();
-  const pricing = db.prepare("SELECT * FROM pricing_plans WHERE is_active = 1").all();
-  const process = db.prepare("SELECT * FROM process_steps WHERE is_active = 1").all();
-  const problems = db.prepare("SELECT * FROM problem_cards WHERE is_active = 1").all();
-  const benefits = db.prepare("SELECT * FROM benefit_cards WHERE is_active = 1").all();
-  const faq = db.prepare("SELECT * FROM faq WHERE is_active = 1").all();
+router.get("/", async (req, res) => {
+  try {
+    const siteContent = await db.all("SELECT section_key, content_json FROM site_content") as any[];
+    const cases = await db.all("SELECT * FROM cases WHERE is_active = 1");
+    const pricing = await db.all("SELECT * FROM pricing_plans WHERE is_active = 1");
+    const process = await db.all("SELECT * FROM process_steps WHERE is_active = 1");
+    const problems = await db.all("SELECT * FROM problem_cards WHERE is_active = 1");
+    const benefits = await db.all("SELECT * FROM benefit_cards WHERE is_active = 1");
+    const faq = await db.all("SELECT * FROM faq WHERE is_active = 1");
 
-  const content: any = {};
-  siteContent.forEach(item => {
-    content[item.section_key] = JSON.parse(item.content_json);
-  });
+    const content: any = {};
+    siteContent.forEach(item => {
+      content[item.section_key] = JSON.parse(item.content_json);
+    });
 
-  res.json({
-    content,
-    cases,
-    pricing: pricing.map((p: any) => ({ ...p, features: JSON.parse(p.features_json) })),
-    process,
-    problems,
-    benefits,
-    faq
-  });
+    res.json({
+      content,
+      cases,
+      pricing: pricing.map((p: any) => ({ ...p, features: JSON.parse(p.features_json) })),
+      process,
+      problems,
+      benefits,
+      faq
+    });
+  } catch (error) {
+    res.status(500).json({ message: "Error fetching content" });
+  }
 });
 
 // ПУБЛІЧНИЙ: Отримання конкретної секції
-router.get("/:section", (req, res) => {
+router.get("/:section", async (req, res) => {
   const { section } = req.params;
-  const item = db.prepare("SELECT content_json FROM site_content WHERE section_key = ?").get(section) as any;
+  try {
+    const item = await db.get("SELECT content_json FROM site_content WHERE section_key = ?", [section]) as any;
 
-  if (!item) {
-    return res.status(404).json({ message: "Section not found" });
+    if (!item) {
+      return res.status(404).json({ message: "Section not found" });
+    }
+
+    res.json(JSON.parse(item.content_json));
+  } catch (error) {
+    res.status(500).json({ message: "Error fetching section" });
   }
-
-  res.json(JSON.parse(item.content_json));
 });
 
 // ЗАХИЩЕНИЙ: Оновлення секції контенту
-router.put("/:section", authenticateToken, (req, res) => {
+router.put("/:section", authenticateToken, async (req, res) => {
   const { section } = req.params;
   const content = req.body;
 
-  const result = db.prepare("UPDATE site_content SET content_json = ?, updated_at = CURRENT_TIMESTAMP WHERE section_key = ?")
-    .run(JSON.stringify(content), section);
+  try {
+    const result = await db.run("UPDATE site_content SET content_json = ?, updated_at = CURRENT_TIMESTAMP WHERE section_key = ?",
+      [JSON.stringify(content), section]);
 
-  if (result.changes === 0) {
-    return res.status(404).json({ message: "Section not found" });
+    if (result.changes === 0) {
+      return res.status(404).json({ message: "Section not found" });
+    }
+
+    res.json({ message: "Section updated successfully" });
+  } catch (error) {
+    res.status(500).json({ message: "Error updating section" });
   }
-
-  res.json({ message: "Section updated successfully" });
 });
 
 // ЗАХИЩЕНИЙ: Оновлення кейсу
-router.put("/cases/:id", authenticateToken, (req, res) => {
+router.put("/cases/:id", authenticateToken, async (req, res) => {
   const { id } = req.params;
   const { niche, title, image, problem, detailed_problem, detailed_solution, solution, result, link } = req.body;
 
-  db.prepare(`
-    UPDATE cases 
-    SET niche = ?, title = ?, image = ?, problem = ?, detailed_problem = ?, detailed_solution = ?, solution = ?, result = ?, link = ?, updated_at = CURRENT_TIMESTAMP
-    WHERE id = ?
-  `).run(niche, title, image, problem, detailed_problem, detailed_solution, solution, result, link, id);
+  try {
+    await db.run(`
+      UPDATE cases 
+      SET niche = ?, title = ?, image = ?, problem = ?, detailed_problem = ?, detailed_solution = ?, solution = ?, result = ?, link = ?, updated_at = CURRENT_TIMESTAMP
+      WHERE id = ?
+    `, [niche, title, image, problem, detailed_problem, detailed_solution, solution, result, link, id]);
 
-  res.json({ message: "Case updated successfully" });
+    res.json({ message: "Case updated successfully" });
+  } catch (error) {
+    res.status(500).json({ message: "Error updating case" });
+  }
 });
 
 // ЗАХИЩЕНИЙ: Оновлення тарифу
-router.put("/pricing/:id", authenticateToken, (req, res) => {
+router.put("/pricing/:id", authenticateToken, async (req, res) => {
   const { id } = req.params;
   const { name, price, label, featured, features, result_text } = req.body;
 
-  db.prepare(`
-    UPDATE pricing_plans 
-    SET name = ?, price = ?, label = ?, featured = ?, features_json = ?, result_text = ?, updated_at = CURRENT_TIMESTAMP
-    WHERE id = ?
-  `).run(name, price, label, featured ? 1 : 0, JSON.stringify(features), result_text, id);
+  try {
+    await db.run(`
+      UPDATE pricing_plans 
+      SET name = ?, price = ?, label = ?, featured = ?, features_json = ?, result_text = ?, updated_at = CURRENT_TIMESTAMP
+      WHERE id = ?
+    `, [name, price, label, featured ? 1 : 0, JSON.stringify(features), result_text, id]);
 
-  res.json({ message: "Pricing plan updated successfully" });
+    res.json({ message: "Pricing plan updated successfully" });
+  } catch (error) {
+    res.status(500).json({ message: "Error updating pricing plan" });
+  }
 });
 
 // ЗАХИЩЕНИЙ: Оновлення кроку процесу
-router.put("/process/:id", authenticateToken, (req, res) => {
+router.put("/process/:id", authenticateToken, async (req, res) => {
   const { id } = req.params;
   const { step_number, title, description } = req.body;
 
-  db.prepare(`
-    UPDATE process_steps 
-    SET step_number = ?, title = ?, description = ?
-    WHERE id = ?
-  `).run(step_number, title, description, id);
+  try {
+    await db.run(`
+      UPDATE process_steps 
+      SET step_number = ?, title = ?, description = ?
+      WHERE id = ?
+    `, [step_number, title, description, id]);
 
-  res.json({ message: "Process step updated successfully" });
+    res.json({ message: "Process step updated successfully" });
+  } catch (error) {
+    res.status(500).json({ message: "Error updating process step" });
+  }
 });
 
 // ЗАХИЩЕНИЙ: Оновлення картки проблеми
-router.put("/problem-cards/:id", authenticateToken, (req, res) => {
+router.put("/problem-cards/:id", authenticateToken, async (req, res) => {
   const { id } = req.params;
   const { title, description } = req.body;
 
-  db.prepare(`
-    UPDATE problem_cards 
-    SET title = ?, description = ?
-    WHERE id = ?
-  `).run(title, description, id);
+  try {
+    await db.run(`
+      UPDATE problem_cards 
+      SET title = ?, description = ?
+      WHERE id = ?
+    `, [title, description, id]);
 
-  res.json({ message: "Problem card updated successfully" });
+    res.json({ message: "Problem card updated successfully" });
+  } catch (error) {
+    res.status(500).json({ message: "Error updating problem card" });
+  }
 });
 
 // ЗАХИЩЕНИЙ: Оновлення картки переваги
-router.put("/benefit-cards/:id", authenticateToken, (req, res) => {
+router.put("/benefit-cards/:id", authenticateToken, async (req, res) => {
   const { id } = req.params;
   const { icon_name, title, result } = req.body;
 
-  db.prepare(`
-    UPDATE benefit_cards 
-    SET icon_name = ?, title = ?, result = ?
-    WHERE id = ?
-  `).run(icon_name, title, result, id);
+  try {
+    await db.run(`
+      UPDATE benefit_cards 
+      SET icon_name = ?, title = ?, result = ?
+      WHERE id = ?
+    `, [icon_name, title, result, id]);
 
-  res.json({ message: "Benefit card updated successfully" });
+    res.json({ message: "Benefit card updated successfully" });
+  } catch (error) {
+    res.status(500).json({ message: "Error updating benefit card" });
+  }
 });
 
 // ЗАХИЩЕНИЙ: Оновлення FAQ
-router.put("/faq/:id", authenticateToken, (req, res) => {
+router.put("/faq/:id", authenticateToken, async (req, res) => {
   const { id } = req.params;
   const { question, answer } = req.body;
 
-  db.prepare(`
-    UPDATE faq 
-    SET question = ?, answer = ?, updated_at = CURRENT_TIMESTAMP
-    WHERE id = ?
-  `).run(question, answer, id);
+  try {
+    await db.run(`
+      UPDATE faq 
+      SET question = ?, answer = ?, updated_at = CURRENT_TIMESTAMP
+      WHERE id = ?
+    `, [question, answer, id]);
 
-  res.json({ message: "FAQ updated successfully" });
+    res.json({ message: "FAQ updated successfully" });
+  } catch (error) {
+    res.status(500).json({ message: "Error updating FAQ" });
+  }
 });
 
 // Додати новий FAQ
-router.post("/faq", authenticateToken, (req, res) => {
+router.post("/faq", authenticateToken, async (req, res) => {
   const { question, answer } = req.body;
 
-  const stmt = db.prepare(`
-    INSERT INTO faq (question, answer)
-    VALUES (?, ?)
-  `);
-
-  const result = stmt.run(question, answer);
-  res.json({ id: result.lastInsertRowid, message: "FAQ created successfully" });
+  try {
+    const result = await db.run(`
+      INSERT INTO faq (question, answer)
+      VALUES (?, ?)
+    `, [question, answer]);
+    res.json({ id: result.lastInsertRowid, message: "FAQ created successfully" });
+  } catch (error) {
+    res.status(500).json({ message: "Error creating FAQ" });
+  }
 });
 
 // Видалити FAQ
-router.delete("/faq/:id", authenticateToken, (req, res) => {
+router.delete("/faq/:id", authenticateToken, async (req, res) => {
   const { id } = req.params;
-  db.prepare("DELETE FROM faq WHERE id = ?").run(id);
-  res.json({ message: "FAQ deleted successfully" });
+  try {
+    await db.run("DELETE FROM faq WHERE id = ?", [id]);
+    res.json({ message: "FAQ deleted successfully" });
+  } catch (error) {
+    res.status(500).json({ message: "Error deleting FAQ" });
+  }
 });
 
 // --- КЕЙСИ (Спеціальні маршрути для додавання/видалення) ---
 
 // Додати новий кейс
-router.post("/cases", authenticateToken, (req, res) => {
+router.post("/cases", authenticateToken, async (req, res) => {
   const { title, niche, image, problem, detailed_problem, solution, detailed_solution, result, link } = req.body;
   
-  const stmt = db.prepare(`
-    INSERT INTO cases (title, niche, image, problem, detailed_problem, solution, detailed_solution, result, link)
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
-  `);
-  
   try {
-    const info = stmt.run(title, niche, image, problem, detailed_problem, solution, detailed_solution, result, link);
+    const info = await db.run(`
+      INSERT INTO cases (title, niche, image, problem, detailed_problem, solution, detailed_solution, result, link)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+    `, [title, niche, image, problem, detailed_problem, solution, detailed_solution, result, link]);
     res.status(201).json({ id: info.lastInsertRowid, message: "Кейс створено" });
   } catch (err) {
     res.status(500).json({ error: "Помилка при створенні кейсу" });
@@ -181,12 +221,11 @@ router.post("/cases", authenticateToken, (req, res) => {
 });
 
 // Видалити кейс
-router.delete("/cases/:id", authenticateToken, (req, res) => {
+router.delete("/cases/:id", authenticateToken, async (req, res) => {
   const { id } = req.params;
-  const stmt = db.prepare("DELETE FROM cases WHERE id = ?");
   
   try {
-    stmt.run(id);
+    await db.run("DELETE FROM cases WHERE id = ?", [id]);
     res.json({ message: "Кейс видалено" });
   } catch (err) {
     res.status(500).json({ error: "Помилка при видаленні кейсу" });
@@ -196,9 +235,9 @@ router.delete("/cases/:id", authenticateToken, (req, res) => {
 // --- ЛІДИ (Заявки) ---
 
 // Отримати всі ліди
-router.get("/leads/all", authenticateToken, (req, res) => {
+router.get("/leads/all", authenticateToken, async (req, res) => {
   try {
-    const leads = db.prepare("SELECT * FROM leads ORDER BY created_at DESC").all();
+    const leads = await db.all("SELECT * FROM leads ORDER BY created_at DESC");
     res.json(leads);
   } catch (err) {
     res.status(500).json({ error: "Помилка при отриманні лідів" });
@@ -206,12 +245,12 @@ router.get("/leads/all", authenticateToken, (req, res) => {
 });
 
 // Оновити статус ліда
-router.put("/leads/:id/status", authenticateToken, (req, res) => {
+router.put("/leads/:id/status", authenticateToken, async (req, res) => {
   const { id } = req.params;
   const { status } = req.body;
   
   try {
-    db.prepare("UPDATE leads SET status = ? WHERE id = ?").run(status, id);
+    await db.run("UPDATE leads SET status = ? WHERE id = ?", [status, id]);
     res.json({ message: "Статус ліда оновлено" });
   } catch (err) {
     res.status(500).json({ error: "Помилка при оновленні статусу" });
@@ -219,10 +258,10 @@ router.put("/leads/:id/status", authenticateToken, (req, res) => {
 });
 
 // Видалити лід
-router.delete("/leads/:id", authenticateToken, (req, res) => {
+router.delete("/leads/:id", authenticateToken, async (req, res) => {
   const { id } = req.params;
   try {
-    db.prepare("DELETE FROM leads WHERE id = ?").run(id);
+    await db.run("DELETE FROM leads WHERE id = ?", [id]);
     res.json({ message: "Лід видалено" });
   } catch (err) {
     res.status(500).json({ error: "Помилка при видаленні ліда" });

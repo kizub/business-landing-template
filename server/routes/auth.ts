@@ -11,7 +11,7 @@ if (!JWT_SECRET) {
 }
 
 // ПУБЛІЧНИЙ: Вхід адміністратора
-router.post("/login", (req, res) => {
+router.post("/login", async (req, res) => {
   const username = req.body.username?.trim();
   const password = req.body.password?.trim();
   // Fallback to a hardcoded secret if JWT_SECRET is missing (useful for initial deploy)
@@ -25,12 +25,12 @@ router.post("/login", (req, res) => {
   }
 
   // Case-insensitive search for better UX, but we'll check exact match if needed
-  const user = db.prepare("SELECT * FROM users WHERE LOWER(username) = LOWER(?)").get(username) as any;
+  const user = await db.get("SELECT * FROM users WHERE LOWER(username) = LOWER(?)", [username]) as any;
 
   if (!user) {
     console.error(`Login failed: User '${username}' not found in database.`);
     // Log available users for debugging (only in dev/debug mode)
-    const allUsers = db.prepare("SELECT username FROM users").all();
+    const allUsers = await db.all("SELECT username FROM users");
     console.log("Available users in DB:", allUsers.map((u: any) => u.username));
     return res.status(401).json({ message: "Invalid credentials" });
   }

@@ -2,196 +2,285 @@ import Database from 'better-sqlite3';
 import path from 'path';
 import bcrypt from 'bcryptjs';
 import fs from 'fs';
+import pkg from 'pg';
+const { Pool } = pkg;
 
 const dbPath = process.env.DATABASE_PATH || path.join(process.cwd(), 'database.sqlite');
+const DATABASE_URL = process.env.DATABASE_URL;
 
-let db: Database.Database;
+// Types for our unified DB interface
+export interface DbInterface {
+  query: (text: string, params?: any[]) => Promise<any>;
+  get: (text: string, params?: any[]) => Promise<any>;
+  all: (text: string, params?: any[]) => Promise<any[]>;
+  run: (text: string, params?: any[]) => Promise<{ lastInsertRowid: number | string; changes: number }>;
+  isPostgres: boolean;
+}
 
+let sqliteDb: Database.Database | null = null;
+let pgPool: pkg.Pool | null = null;
+
+// Initialize SQLite anyway as a backup or source for migration
 try {
-  db = new Database(dbPath);
+  sqliteDb = new Database(dbPath);
 } catch (error: any) {
   if (error.code === 'SQLITE_CORRUPT') {
     console.error('Database file is malformed. Deleting and recreating...');
-    if (fs.existsSync(dbPath)) {
-      fs.unlinkSync(dbPath);
-    }
-    db = new Database(dbPath);
+    if (fs.existsSync(dbPath)) fs.unlinkSync(dbPath);
+    sqliteDb = new Database(dbPath);
   } else {
-    throw error;
+    console.error('Failed to initialize SQLite:', error);
   }
 }
 
-// Initialize tables
-export function initDb() {
+if (DATABASE_URL) {
+  console.log('PostgreSQL URL detected. Initializing connection pool...');
+  pgPool = new Pool({
+    connectionString: DATABASE_URL,
+    ssl: { rejectUnauthorized: false }
+  });
+}
+
+// Unified DB object
+export const db: DbInterface = {
+  isPostgres: !!pgPool,
+  query: async (text: string, params: any[] = []) => {
+    if (pgPool) {
+      // Convert SQL syntax from SQLite (?) to Postgres ($1, $2...)
+      let pgText = text;
+      params.forEach((_, i) => {
+        pgText = pgText.replace('?', `$${i + 1}`);
+      });
+      const res = await pgPool.query(pgText, params);
+      return res;
+    } else {
+      return sqliteDb!.prepare(text).run(...params);
+    }
+  },
+  get: async (text: string, params: any[] = []) => {
+    if (pgPool) {
+      let pgText = text;
+      params.forEach((_, i) => {
+        pgText = pgText.replace(/\?/, `$${i + 1}`);
+      });
+      const res = await pgPool.query(pgText, params);
+      return res.rows[0];
+    } else {
+      return sqliteDb!.prepare(text).get(...params);
+    }
+  },
+  all: async (text: string, params: any[] = []) => {
+    if (pgPool) {
+      let pgText = text;
+      params.forEach((_, i) => {
+        pgText = pgText.replace(/\?/, `$${i + 1}`);
+      });
+      const res = await pgPool.query(pgText, params);
+      return res.rows;
+    } else {
+      return sqliteDb!.prepare(text).all(...params);
+    }
+  },
+  run: async (text: string, params: any[] = []) => {
+    if (pgPool) {
+      let pgText = text;
+      // Handle INSERT ... RETURNING for Postgres to get ID
+      if (text.trim().toUpperCase().startsWith('INSERT')) {
+        pgText += ' RETURNING id';
+      }
+      params.forEach((_, i) => {
+        pgText = pgText.replace(/\?/, `$${i + 1}`);
+      });
+      const res = await pgPool.query(pgText, params);
+      return { 
+        lastInsertRowid: res.rows[0]?.id || 0, 
+        changes: res.rowCount || 0 
+      };
+    } else {
+      const info = sqliteDb!.prepare(text).run(...params);
+      return { lastInsertRowid: info.lastInsertRowid, changes: info.changes };
+    }
+  }
+};
+
+export async function initDb() {
   try {
-    console.log('Initializing database...');
-    // Users table
-    db.prepare(`
-      CREATE TABLE IF NOT EXISTS users (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
+    console.log(`Initializing ${db.isPostgres ? 'PostgreSQL' : 'SQLite'} database...`);
+    
+    const tables = [
+      // Users
+      `CREATE TABLE IF NOT EXISTS users (
+        id SERIAL PRIMARY KEY,
         username TEXT UNIQUE NOT NULL,
         password TEXT NOT NULL,
-        created_at DATETIME DEFAULT CURRENT_TIMESTAMP
-      )
-    `).run();
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      )`,
+      // Site Content
+      `CREATE TABLE IF NOT EXISTS site_content (
+        id SERIAL PRIMARY KEY,
+        section_key TEXT UNIQUE NOT NULL,
+        content_json TEXT NOT NULL,
+        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      )`,
+      // Cases
+      `CREATE TABLE IF NOT EXISTS cases (
+        id SERIAL PRIMARY KEY,
+        niche TEXT NOT NULL,
+        title TEXT NOT NULL,
+        image TEXT NOT NULL,
+        problem TEXT NOT NULL,
+        detailed_problem TEXT NOT NULL,
+        detailed_solution TEXT NOT NULL,
+        solution TEXT NOT NULL,
+        result TEXT NOT NULL,
+        link TEXT NOT NULL,
+        is_active INTEGER DEFAULT 1,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      )`,
+      // Pricing
+      `CREATE TABLE IF NOT EXISTS pricing_plans (
+        id SERIAL PRIMARY KEY,
+        name TEXT NOT NULL,
+        price TEXT NOT NULL,
+        label TEXT NOT NULL,
+        featured INTEGER DEFAULT 0,
+        features_json TEXT NOT NULL,
+        result_text TEXT NOT NULL,
+        is_active INTEGER DEFAULT 1,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      )`,
+      // Process
+      `CREATE TABLE IF NOT EXISTS process_steps (
+        id SERIAL PRIMARY KEY,
+        step_number TEXT NOT NULL,
+        title TEXT NOT NULL,
+        description TEXT NOT NULL,
+        is_active INTEGER DEFAULT 1
+      )`,
+      // Problems
+      `CREATE TABLE IF NOT EXISTS problem_cards (
+        id SERIAL PRIMARY KEY,
+        title TEXT NOT NULL,
+        description TEXT NOT NULL,
+        is_active INTEGER DEFAULT 1
+      )`,
+      // Benefits
+      `CREATE TABLE IF NOT EXISTS benefit_cards (
+        id SERIAL PRIMARY KEY,
+        icon_name TEXT NOT NULL,
+        title TEXT NOT NULL,
+        result TEXT NOT NULL,
+        is_active INTEGER DEFAULT 1
+      )`,
+      // FAQ
+      `CREATE TABLE IF NOT EXISTS faq (
+        id SERIAL PRIMARY KEY,
+        question TEXT NOT NULL,
+        answer TEXT NOT NULL,
+        is_active INTEGER DEFAULT 1,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      )`,
+      // Leads
+      `CREATE TABLE IF NOT EXISTS leads (
+        id SERIAL PRIMARY KEY,
+        name TEXT NOT NULL,
+        contact TEXT NOT NULL,
+        message TEXT,
+        plan TEXT,
+        source TEXT,
+        status TEXT DEFAULT 'new',
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      )`,
+      // Articles
+      `CREATE TABLE IF NOT EXISTS articles (
+        id SERIAL PRIMARY KEY,
+        slug TEXT UNIQUE NOT NULL,
+        title TEXT NOT NULL,
+        excerpt TEXT NOT NULL,
+        content TEXT NOT NULL,
+        image TEXT,
+        category TEXT,
+        is_published INTEGER DEFAULT 0,
+        published_at TIMESTAMP,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      )`
+    ];
 
-  // Site content table (for simple sections)
-  db.prepare(`
-    CREATE TABLE IF NOT EXISTS site_content (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      section_key TEXT UNIQUE NOT NULL,
-      content_json TEXT NOT NULL,
-      updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
-    )
-  `).run();
-
-  // Cases table
-  db.prepare(`
-    CREATE TABLE IF NOT EXISTS cases (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      niche TEXT NOT NULL,
-      title TEXT NOT NULL,
-      image TEXT NOT NULL,
-      problem TEXT NOT NULL,
-      detailed_problem TEXT NOT NULL,
-      detailed_solution TEXT NOT NULL,
-      solution TEXT NOT NULL,
-      result TEXT NOT NULL,
-      link TEXT NOT NULL,
-      is_active INTEGER DEFAULT 1,
-      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-      updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
-    )
-  `).run();
-
-  // Pricing plans table
-  db.prepare(`
-    CREATE TABLE IF NOT EXISTS pricing_plans (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      name TEXT NOT NULL,
-      price TEXT NOT NULL,
-      label TEXT NOT NULL,
-      featured INTEGER DEFAULT 0,
-      features_json TEXT NOT NULL,
-      result_text TEXT NOT NULL,
-      is_active INTEGER DEFAULT 1,
-      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-      updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
-    )
-  `).run();
-
-  // Process steps table
-  db.prepare(`
-    CREATE TABLE IF NOT EXISTS process_steps (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      step_number TEXT NOT NULL,
-      title TEXT NOT NULL,
-      description TEXT NOT NULL,
-      is_active INTEGER DEFAULT 1
-    )
-  `).run();
-
-  // Problem cards table
-  db.prepare(`
-    CREATE TABLE IF NOT EXISTS problem_cards (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      title TEXT NOT NULL,
-      description TEXT NOT NULL,
-      is_active INTEGER DEFAULT 1
-    )
-  `).run();
-
-  // Benefit cards table
-  db.prepare(`
-    CREATE TABLE IF NOT EXISTS benefit_cards (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      icon_name TEXT NOT NULL,
-      title TEXT NOT NULL,
-      result TEXT NOT NULL,
-      is_active INTEGER DEFAULT 1
-    )
-  `).run();
-
-  // FAQ table
-  db.prepare(`
-    CREATE TABLE IF NOT EXISTS faq (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      question TEXT NOT NULL,
-      answer TEXT NOT NULL,
-      is_active INTEGER DEFAULT 1,
-      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-      updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
-    )
-  `).run();
-
-  // Leads table
-  db.prepare(`
-    CREATE TABLE IF NOT EXISTS leads (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      name TEXT NOT NULL,
-      contact TEXT NOT NULL,
-      message TEXT,
-      plan TEXT,
-      source TEXT,
-      status TEXT DEFAULT 'new', -- new, contacted, closed
-      created_at DATETIME DEFAULT CURRENT_TIMESTAMP
-    )
-  `).run();
-
-  // Articles table
-  db.prepare(`
-    CREATE TABLE IF NOT EXISTS articles (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      slug TEXT UNIQUE NOT NULL,
-      title TEXT NOT NULL,
-      excerpt TEXT NOT NULL,
-      content TEXT NOT NULL,
-      image TEXT,
-      category TEXT,
-      is_published INTEGER DEFAULT 0,
-      published_at DATETIME,
-      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-      updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
-    )
-  `).run();
-
-  const envUsername = (process.env.ADMIN_USERNAME || 'Kizub').trim();
-  const envPassword = (process.env.ADMIN_PASSWORD || 'admin123').trim();
-  
-  // Ensure the environment-defined admin exists
-  const adminExists = db.prepare('SELECT * FROM users WHERE username = ?').get(envUsername) as any;
-  const hashedPassword = bcrypt.hashSync(envPassword, 10);
-  
-  if (!adminExists) {
-    db.prepare('INSERT OR REPLACE INTO users (username, password) VALUES (?, ?)').run(envUsername, hashedPassword);
-    console.log(`Admin user '${envUsername}' ensured in database (trimmed).`);
-  } else {
-    db.prepare('UPDATE users SET password = ? WHERE username = ?').run(hashedPassword, envUsername);
-    console.log(`Password for '${envUsername}' updated from environment (trimmed).`);
-  }
-
-  // Fallback: Also ensure 'admin' exists with 'admin123' if it's different from env
-  if (envUsername !== 'admin') {
-    const fallbackExists = db.prepare('SELECT * FROM users WHERE username = ?').get('admin') as any;
-    const fallbackHash = bcrypt.hashSync('admin123', 10);
-    if (!fallbackExists) {
-      db.prepare('INSERT INTO users (username, password) VALUES (?, ?)').run('admin', fallbackHash);
-    } else {
-      db.prepare('UPDATE users SET password = ? WHERE username = ?').run(fallbackHash, 'admin');
+    for (const sql of tables) {
+      if (db.isPostgres) {
+        // Adjust syntax for Postgres
+        const pgSql = sql.replace(/INTEGER PRIMARY KEY AUTOINCREMENT/g, 'SERIAL PRIMARY KEY')
+                         .replace(/DATETIME/g, 'TIMESTAMP');
+        await pgPool!.query(pgSql);
+      } else {
+        sqliteDb!.prepare(sql).run();
+      }
     }
-    console.log("Fallback admin 'admin' with 'admin123' also ensured.");
-  }
 
-  seedInitialContent();
+    // Migration logic: If Postgres is active, check if we need to migrate from SQLite
+    if (db.isPostgres && sqliteDb) {
+      await migrateData();
+    }
+
+    // Ensure Admin
+    const envUsername = (process.env.ADMIN_USERNAME || 'Kizub').trim();
+    const envPassword = (process.env.ADMIN_PASSWORD || 'admin123').trim();
+    const hashedPassword = bcrypt.hashSync(envPassword, 10);
+
+    const admin = await db.get('SELECT * FROM users WHERE username = ?', [envUsername]);
+    if (!admin) {
+      await db.run('INSERT INTO users (username, password) VALUES (?, ?)', [envUsername, hashedPassword]);
+      console.log(`Admin user '${envUsername}' created.`);
+    }
+
+    await seedInitialContent();
     console.log('Database initialization complete.');
   } catch (error) {
     console.error('Error during database initialization:', error);
-    throw error;
   }
 }
 
-function seedInitialContent() {
-  // Seed site_content
+async function migrateData() {
+  console.log('Checking for data migration from SQLite to PostgreSQL...');
+  try {
+    // Migrate Articles as priority
+    const sqliteArticles = sqliteDb!.prepare('SELECT * FROM articles').all() as any[];
+    for (const art of sqliteArticles) {
+      const exists = await db.get('SELECT id FROM articles WHERE slug = ?', [art.slug]);
+      if (!exists) {
+        console.log(`Migrating article: ${art.title}`);
+        await db.run(`
+          INSERT INTO articles (slug, title, excerpt, content, image, category, is_published, published_at, created_at)
+          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+        `, [art.slug, art.title, art.excerpt, art.content, art.image, art.category, art.is_published, art.published_at, art.created_at]);
+      }
+    }
+    
+    // Migrate Leads
+    const sqliteLeads = sqliteDb!.prepare('SELECT * FROM leads').all() as any[];
+    for (const lead of sqliteLeads) {
+      const exists = await db.get('SELECT id FROM leads WHERE contact = ? AND created_at = ?', [lead.contact, lead.created_at]);
+      if (!exists) {
+        await db.run(`
+          INSERT INTO leads (name, contact, message, plan, source, status, created_at)
+          VALUES (?, ?, ?, ?, ?, ?, ?)
+        `, [lead.name, lead.contact, lead.message, lead.plan, lead.source, lead.status, lead.created_at]);
+      }
+    }
+    console.log('Migration check finished.');
+  } catch (err) {
+    console.error('Migration failed:', err);
+  }
+}
+
+async function seedInitialContent() {
+  const count = await db.get('SELECT COUNT(*) as count FROM site_content');
+  if (count.count > 0) return;
+
   const sections = [
     {
       key: 'hero',
@@ -269,219 +358,11 @@ function seedInitialContent() {
         ogImage: '',
         favicon: ''
       }
-    },
-    {
-      key: 'speed_roi',
-      content: {
-        title: 'ШВИДКІСТЬ = ГРОШІ',
-        subtitle: 'Швидкість відповіді безпосередньо впливає на прибуток. Є проста закономірність: чим швидше ви відповідаєте — тим більша ймовірність продажу.',
-        statValue: '+400%',
-        statLabel: 'Ріст конверсії в продаж',
-        statDesc: 'при відповіді клієнту в перші 5 хвилин',
-        features: [
-          { title: "✔ Автоматизація", desc: "✔ заявка приходить одразу ✔ Telegram сповіщення ✔ авто-відповідь ✔ нагадування" },
-          { title: "✔ Переваги", desc: "✔ не втрачаєте клієнтів ✔ швидше за конкурентів ✔ ріст конверсії" },
-          { title: "✔ Результат", desc: "✔ Стабільний потік заявок без зливу бюджету" }
-        ],
-        calcTitle: 'Скільки грошей ви реально втрачаєте щомісяця?',
-        calcDesc: 'Більшість бізнесів навіть не рахують це. Але різниця між 1% і 5% конверсії — це не “трохи більше”, це різниця в кілька разів по доходу.',
-        example: 'Наприклад: при тому ж трафіку ви можете отримувати в 2–5 разів більше заявок без збільшення бюджету на рекламу.',
-        labelTraffic: 'Трафік (відвідувачів / міс.)',
-        labelConversion: 'Конверсія (%)',
-        labelCheck: 'Середній чек (грн)',
-        labelCurrentRevenue: 'Поточний дохід:',
-        labelPotentialRevenue: 'Потенціал (при 5% конверсії):',
-        labelLostProfit: 'Ваша недоотримана вигода:'
-      }
-    },
-    {
-      key: 'problems_header',
-      content: {
-        title: 'Проблеми, які ми вирішуємо',
-        subtitle: 'Якщо ваш сайт просто “висить” в інтернеті — він не працює. Ось що ми виправляємо.'
-      }
-    },
-    {
-      key: 'benefits_header',
-      content: {
-        title: 'Чому це працює краще за звичайний сайт',
-        subtitle: 'Ми не просто малюємо картинки. Ми будуємо логіку, яка веде клієнта до покупки.'
-      }
-    },
-    {
-      key: 'cases_header',
-      content: {
-        title: 'Результати, які можна виміряти в грошах',
-        subtitle: 'Кейси, де ми впровадили систему і вивели бізнес на новий рівень.',
-        visitSiteLabel: 'Відвідати сайт',
-        visitSiteHint: 'Натисніть, щоб побачити результат наживо',
-        problemLabel: 'Проблема',
-        solutionLabel: 'Рішення',
-        resultLabel: 'Результат',
-        closeModalLabel: 'Закрити вікно',
-        moreDetailsLabel: 'Дивитись детальніше'
-      }
-    },
-    {
-      key: 'process_header',
-      content: {
-        title: 'Як ми будуємо вашу систему',
-        subtitle: 'Від першого дзвінка до стабільного потоку заявок — всього 6 кроків.',
-        stepLabel: 'Крок'
-      }
-    },
-    {
-      key: 'pricing_header',
-      content: {
-        title: 'Оберіть свій рівень масштабування',
-        subtitle: 'Ми підберемо рішення під ваші задачі: від швидкого старту до повного захоплення ринку.',
-        resultLabel: 'Результат:',
-        selectPlanLabel: 'Обрати цей формат'
-      }
-    },
-    {
-      key: 'faq_header',
-      content: {
-        title: 'Часті запитання',
-        subtitle: 'Відповіді на те, що зазвичай цікавить моїх клієнтів.'
-      }
     }
   ];
 
   for (const section of sections) {
-    db.prepare('INSERT OR REPLACE INTO site_content (section_key, content_json) VALUES (?, ?)').run(section.key, JSON.stringify(section.content));
-  }
-
-  // Seed cases
-  db.prepare('DELETE FROM cases').run();
-  const initialCases = [
-    {
-      niche: "Адвокатське бюро",
-      title: "Система для адвокатського бюро",
-      image: "https://picsum.photos/seed/legal/800/600",
-      problem: "багато переходів, але мало заявок",
-      detailed_problem: "Сайт мав багато відвідувачів з реклами, але конверсія в заявку була критично низькою. Бюджет витрачався, але клієнти не залишали контакти.",
-      detailed_solution: "— змінили структуру сайту\n— переписали тексти\n— додали логіку дій\n— підключили обробку заявок",
-      solution: "Повна перебудова воронки та копірайтингу.",
-      result: "— збільшення кількості заявок\n— стабільний потік клієнтів\n— без збільшення бюджету",
-      link: "https://example.com/case1"
-    },
-    {
-      niche: "Будівництво",
-      title: "Знизили вартість ліда в 3.75 рази",
-      image: "https://picsum.photos/seed/construction/800/600",
-      problem: "Висока вартість залучення клієнта.",
-      detailed_problem: "Клієнт витрачав великі бюджети на рекламу, але вартість одного ліда була занадто високою для рентабельності бізнесу.",
-      detailed_solution: "Впровадили систему з квізом та автоматизацією, що дозволило краще сегментувати аудиторію та знизити вартість ліда.",
-      solution: "Впровадження квіз-системи та оптимізація офферу.",
-      result: "Вартість ліда впала з 450 грн до 120 грн.",
-      link: "https://example.com/case2"
-    }
-  ];
-
-  const insertCase = db.prepare(`
-    INSERT INTO cases (niche, title, image, problem, detailed_problem, detailed_solution, solution, result, link)
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
-  `);
-  for (const c of initialCases) {
-    insertCase.run(c.niche, c.title, c.image, c.problem, c.detailed_problem, c.detailed_solution, c.solution, c.result, c.link);
-  }
-
-  // Seed pricing
-  db.prepare('DELETE FROM pricing_plans').run();
-  const initialPlans = [
-    {
-      name: "від 400$",
-      price: "Старт",
-      label: "для швидкого старту",
-      featured: 0,
-      features_json: JSON.stringify(["Лендінг", "Аналіз конкурентів", "Дизайн + Копірайтинг", "Telegram сповіщення", "Адаптив під мобільні"]),
-      result_text: "Швидкий запуск для перевірки ніші та отримання лідів"
-    },
-    {
-      name: "від 650$",
-      price: "Бізнес",
-      label: "Генерація та обробка",
-      featured: 1,
-      features_json: JSON.stringify(["Все з Тарифу Старт", "Глибока стратегія", "Складна автоматизація", "Інтеграція з CRM", "Налаштування аналітики", "A/B тестування"]),
-      result_text: "Повноцінна система генерації та обробки лідів"
-    },
-    {
-      name: "від 1000$",
-      price: "Про",
-      label: "бізнес-система",
-      featured: 0,
-      features_json: JSON.stringify(["Все з Тарифу Бізнес", "Повна воронка продажів", "Email/SMS маркетинг", "UX-оптимізація", "Супровід 1 місяць", "Пріоритетна підтримка"]),
-      result_text: "Масштабована бізнес-система під ключ"
-    }
-  ];
-
-  const insertPlan = db.prepare(`
-    INSERT INTO pricing_plans (name, price, label, featured, features_json, result_text)
-    VALUES (?, ?, ?, ?, ?, ?)
-  `);
-  for (const p of initialPlans) {
-    insertPlan.run(p.name, p.price, p.label, p.featured, p.features_json, p.result_text);
-  }
-
-  // Seed process
-  db.prepare('DELETE FROM process_steps').run();
-  const initialSteps = [
-    { number: "01", title: "Аналіз", desc: "Ми детально розбираємо: ваш продукт, конкурентів, як зараз приходять клієнти, де ви втрачаєте гроші." },
-    { number: "02", title: "Стратегія і структура", desc: "Будуємо логіку сайту: що бачить клієнт, як він рухається, де приймає рішення." },
-    { number: "03", title: "Копірайтинг і прототип", desc: "Пишемо тексти, які продають, і створюємо чорновий варіант системи." },
-    { number: "04", title: "Дизайн і розробка", desc: "Створюємо візуальну частину, яка підкреслює вашу експертність, та програмуємо систему." },
-    { number: "05", title: "Автоматизація", desc: "Підключаємо Telegram, CRM, налаштовуємо сповіщення та нагадування." },
-    { number: "06", title: "Запуск і підтримка", desc: "Запускаємо систему, тестуємо і супроводжуємо перший місяць." }
-  ];
-
-  const insertStep = db.prepare(`
-    INSERT INTO process_steps (step_number, title, description)
-    VALUES (?, ?, ?)
-  `);
-  for (const s of initialSteps) {
-    insertStep.run(s.number, s.title, s.desc);
-  }
-
-  // Seed problems
-  db.prepare('DELETE FROM problem_cards').run();
-  const initialProblems = [
-    { title: "Люди заходять на сайт і йдуть", desc: "Користувач відкриває сторінку і за 3–5 секунд вирішує — залишатися чи ні. Якщо він не розуміє цінність — він просто закриває вкладку. І кожен такий перехід — це ваші гроші." },
-    { title: "Ви втрачаєте заявки після їх отримання", desc: "Якщо ви відповідаєте через 30–60 хв або заявка 'загубилась' — клієнт уже пішов до конкурента. Навіть гарячий лід остигає миттєво." },
-    { title: "Сайт не виконує функцію продажу", desc: "Більшість сайтів — це просто 'вітрина'. Вони виглядають нормально, але не ведуть до дії і не працюють як система. У результаті — немає стабільних заявок." }
-  ];
-  const insertProblem = db.prepare('INSERT INTO problem_cards (title, description) VALUES (?, ?)');
-  for (const p of initialProblems) {
-    insertProblem.run(p.title, p.desc);
-  }
-
-  // Seed benefits
-  db.prepare('DELETE FROM benefit_cards').run();
-  const initialBenefits = [
-    { icon: "Layout", title: "Продумана структура", result: "Ми будуємо логіку: що бачить людина, що вона думає і чому вона залишає заявку." },
-    { icon: "Zap", title: "Швидкість і простота", result: "Сайт завантажується миттєво і не перевантажує користувача. Все максимально зрозуміло." },
-    { icon: "MessageSquare", title: "Повна обробка заявок", result: "Заявка в Telegram, збереження в системі та автоматичні нагадування." }
-  ];
-  const insertBenefit = db.prepare('INSERT INTO benefit_cards (icon_name, title, result) VALUES (?, ?, ?)');
-  for (const b of initialBenefits) {
-    insertBenefit.run(b.icon, b.title, b.result);
-  }
-
-  // Seed FAQ
-  db.prepare('DELETE FROM faq').run();
-  const initialFaq = [
-    { q: "Скільки часу займає розробка?", a: "Зазвичай від 7 до 14 днів. Точний термін залежить від складності задачі і швидкості зворотного зв’язку з вашого боку." },
-    { q: "Чи потрібна мені CRM?", a: "Так, якщо ви хочете не втрачати заявки. Без CRM частина клієнтів просто губиться — особливо якщо заявок стає більше." },
-    { q: "Чи можна редагувати сайт самостійно?", a: "Так. Ви отримуєте адмін-панель, де можете змінювати тексти, фото, блоки і контент без розробника." },
-    { q: "Що відбувається після заявки?", a: "Заявка одразу приходить у Telegram. Вона також зберігається в системі. Якщо ви не відповідаєте — приходить нагадування." },
-    { q: "Чи допомагаєте з рекламою?", a: "Так. Можу або налаштувати базово, або дати чіткі рекомендації, щоб сайт почав приносити заявки." },
-    { q: "Чи буде сайт показуватись у Google?", a: "Так. Сайт одразу оптимізується під пошук: правильна структура, індексація, підключення аналітики." },
-    { q: "Чи є гарантія результату?", a: "Я працюю не просто “щоб зробити сайт”, а щоб система почала приносити заявки." }
-  ];
-
-  const insertFaq = db.prepare('INSERT INTO faq (question, answer) VALUES (?, ?)');
-  for (const f of initialFaq) {
-    insertFaq.run(f.q, f.a);
+    await db.run('INSERT INTO site_content (section_key, content_json) VALUES (?, ?)', [section.key, JSON.stringify(section.content)]);
   }
 }
 
