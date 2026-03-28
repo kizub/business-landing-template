@@ -30,6 +30,18 @@ export const getLeads = () => api.get('/content/leads/all');
 export const updateLeadStatus = (id: number, status: string) => api.put(`/content/leads/${id}/status`, { status });
 export const deleteLead = (id: number) => api.delete(`/content/leads/${id}`);
 
+// Stats
+export const getLeadStats = () => api.get('/stats/leads');
+export const getStatusDistribution = () => api.get('/stats/status-distribution');
+
+// Articles
+export const getAdminArticles = () => api.get('/articles/admin/all');
+export const getArticles = () => api.get('/articles');
+export const getArticle = (slug: string) => api.get(`/articles/${slug}`);
+export const createArticle = (data: any) => api.post('/articles', data);
+export const updateArticle = (id: number, data: any) => api.put(`/articles/${id}`, data);
+export const deleteArticle = (id: number) => api.delete(`/articles/${id}`);
+
 export const uploadFile = (file: File) => {
   const formData = new FormData();
   formData.append('file', file);

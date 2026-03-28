@@ -12,6 +12,8 @@ import authRoutes from "./server/routes/auth.js";
 import contentRoutes from "./server/routes/content.js";
 import uploadRoutes from "./server/routes/uploads.js";
 import contactRoutes from "./server/routes/contact.js";
+import statsRoutes from "./server/routes/stats.js";
+import articleRoutes from "./server/routes/articles.js";
 
 dotenv.config();
 
@@ -55,6 +57,8 @@ async function startServer() {
   app.use("/api/content", contentRoutes);
   app.use("/api/upload", uploadRoutes);
   app.use("/api/contact", contactRoutes);
+  app.use("/api/stats", statsRoutes);
+  app.use("/api/articles", articleRoutes);
 
   // Vite middleware for development
   const isProduction = process.env.NODE_ENV === "production" || process.env.RAILWAY_ENVIRONMENT;

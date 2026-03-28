@@ -3,11 +3,44 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Roman Dev | Розробка сайтів і автоматизація заявок</title>
+    <title>Roman Dev | Автономні системи залучення клієнтів</title>
+    
+    <!-- Google Analytics (GA4) -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-PZHPKVSV65"></script>
+    <script>
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){dataLayer.push(arguments);}
+      gtag('js', new Date());
+      gtag('config', 'G-PZHPKVSV65');
+    </script>
+
+    <!-- Facebook Pixel -->
+    <script>
+      !function(f,b,e,v,n,t,s)
+      {if(f.fbq)return;n=f.fbq=function(){n.callMethod?
+      n.callMethod.apply(n,arguments):n.queue.push(arguments)};
+      if(!f._fbq)f._fbq=n;n.push=n;n.loaded=!0;n.version='2.0';
+      n.queue=[];t=b.createElement(e);t.async=!0;
+      t.src=v;s=b.getElementsByTagName(e)[0];
+      s.parentNode.insertBefore(t,s)}(window, document,'script',
+      'https://connect.facebook.net/en_US/fbevents.js');
+      
+      // Only initialize if the ID is a simple string/number to avoid parse errors
+      const fbId = '3580479398773064'; 
+      if (fbId) {
+        fbq('init', fbId);
+        fbq('track', 'PageView');
+      }
+    </script>
+
+    <!-- reCAPTCHA v3 -->
+    <script src="https://www.google.com/recaptcha/api.js?render=6LeqkJssAAAAAO5Icslio7icxjfTEaGkN63z-a1S"></script>
   </head>
   <body>
     <div id="root"></div>
     <script type="module" src="/src/main.tsx"></script>
+    <!-- Facebook Pixel Noscript -->
+    <noscript><img height="1" width="1" style="display:none" src="https://www.facebook.com/tr?id=3580479398773064&ev=PageView&noscript=1"/></noscript>
   </body>
 </html>
 

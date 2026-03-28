@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, Link, useNavigate, useParams, useLocation } from 'react-router-dom';
 import { motion, AnimatePresence } from 'motion/react';
 import { 
   CheckCircle2, 
@@ -23,15 +23,40 @@ import {
   Loader2,
   User,
   Database,
-  Bell
+  Bell,
+  ArrowLeft,
+  Clock as ClockIcon,
+  Tag
 } from 'lucide-react';
-import { getContent } from './services/api';
+import { getContent, getArticles, getArticle } from './services/api';
 import Admin from './admin/Admin';
 
 // --- Public Components ---
 
+const ScrollToHash = () => {
+  const { hash, pathname } = useParams();
+  const location = useNavigate();
+  const loc = useLocation();
+
+  useEffect(() => {
+    if (loc.hash) {
+      const id = loc.hash.replace('#', '');
+      const element = document.getElementById(id);
+      if (element) {
+        setTimeout(() => {
+          element.scrollIntoView({ behavior: 'smooth' });
+        }, 100);
+      }
+    } else if (loc.pathname === '/' && !loc.hash) {
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+  }, [loc]);
+
+  return null;
+};
+
 const Logo = () => (
-  <div className="flex items-center gap-3">
+  <Link to="/" className="flex items-center gap-3">
     <div className="bg-[#1e293b] text-white px-3 py-2 rounded-lg font-black text-xl leading-none flex items-center justify-center relative">
       BRB
       <span className="absolute top-1 right-1 text-[6px] font-bold opacity-80">TM</span>
@@ -40,8 +65,131 @@ const Logo = () => (
     <div className="text-xl font-light tracking-[0.15em] text-[#1e293b] uppercase">
       Roman Dev
     </div>
-  </div>
+  </Link>
 );
+
+const BlogList = ({ content }: { content: any }) => {
+  const [articles, setArticles] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchArticles = async () => {
+      try {
+        const res = await getArticles();
+        setArticles(res.data);
+      } catch (err) {
+        console.error('Failed to fetch articles', err);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchArticles();
+  }, []);
+
+  if (loading) return <div className="min-h-screen flex items-center justify-center bg-white"><Loader2 className="animate-spin text-accent" size={48} /></div>;
+
+  return (
+    <div className="min-h-screen bg-white pt-24 sm:pt-32 pb-20">
+      <Navbar content={content} />
+      <div className="container-custom">
+        <div className="max-w-3xl mx-auto text-center mb-12 sm:mb-16">
+          <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold text-slate-900 mb-6">Блог Roman Dev</h1>
+          <p className="text-base sm:text-lg text-slate-600">Корисні статті про маркетинг, автоматизацію та розвиток бізнесу.</p>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-8">
+          {articles.map((article) => (
+            <Link key={article.id} to={`/blog/${article.slug}`} className="group">
+              <div className="bg-white rounded-2xl sm:rounded-[32px] overflow-hidden border border-slate-100 shadow-sm hover:shadow-xl transition-all duration-500 h-full flex flex-col">
+                <div className="aspect-video overflow-hidden">
+                  <img 
+                    src={article.image || 'https://picsum.photos/seed/blog/800/600'} 
+                    className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700" 
+                    alt={article.title}
+                    referrerPolicy="no-referrer"
+                  />
+                </div>
+                <div className="p-8 flex-grow flex flex-col">
+                  <div className="flex items-center gap-3 mb-4">
+                    <span className="text-xs font-bold text-accent uppercase tracking-wider">{article.category}</span>
+                    <span className="w-1 h-1 bg-slate-300 rounded-full"></span>
+                    <span className="text-xs text-slate-400">{new Date(article.published_at).toLocaleDateString('uk-UA')}</span>
+                  </div>
+                  <h3 className="text-xl font-bold text-slate-900 mb-4 group-hover:text-accent transition-colors">{article.title}</h3>
+                  <p className="text-slate-500 text-sm line-clamp-3 mb-6">{article.excerpt}</p>
+                  <div className="mt-auto flex items-center gap-2 text-sm font-bold text-slate-900 group-hover:gap-4 transition-all">
+                    Читати далі <ArrowRight size={16} />
+                  </div>
+                </div>
+              </div>
+            </Link>
+          ))}
+        </div>
+      </div>
+      <Footer content={{}} />
+    </div>
+  );
+};
+
+const ArticleView = ({ content }: { content: any }) => {
+  const { slug } = useParams();
+  const [article, setArticle] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchArticle = async () => {
+      try {
+        const res = await getArticle(slug!);
+        setArticle(res.data);
+      } catch (err) {
+        console.error('Failed to fetch article', err);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchArticle();
+  }, [slug]);
+
+  if (loading) return <div className="min-h-screen flex items-center justify-center bg-white"><Loader2 className="animate-spin text-accent" size={48} /></div>;
+  if (!article) return <div className="min-h-screen flex items-center justify-center bg-white">Стаття не знайдена</div>;
+
+  return (
+    <div className="min-h-screen bg-white pt-24 sm:pt-32 pb-20">
+      <Navbar content={content} />
+      <div className="container-custom">
+        <div className="max-w-3xl mx-auto">
+          <Link to="/blog" className="inline-flex items-center gap-2 text-sm font-bold text-slate-400 hover:text-accent mb-8 sm:mb-10 transition-colors">
+            <ArrowLeft size={16} /> Назад до блогу
+          </Link>
+
+          <div className="flex items-center gap-3 mb-6">
+            <span className="text-xs sm:text-sm font-bold text-accent uppercase tracking-wider">{article.category}</span>
+            <span className="w-1 h-1 bg-slate-300 rounded-full"></span>
+            <span className="text-xs sm:text-sm text-slate-400">{new Date(article.published_at).toLocaleDateString('uk-UA')}</span>
+          </div>
+
+          <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold text-slate-900 mb-8 leading-tight">{article.title}</h1>
+          
+          <div className="aspect-video rounded-2xl sm:rounded-[40px] overflow-hidden mb-8 sm:mb-12 shadow-2xl">
+            <img 
+              src={article.image || 'https://picsum.photos/seed/blog/1920/1080'} 
+              className="w-full h-full object-cover" 
+              alt={article.title}
+              referrerPolicy="no-referrer"
+            />
+          </div>
+
+          <div className="prose prose-slate prose-sm sm:prose-lg max-w-none">
+            {article.content.split('\n').map((para: string, i: number) => (
+              <p key={i} className="text-slate-600 mb-6 leading-relaxed">{para}</p>
+            ))}
+          </div>
+        </div>
+      </div>
+      <Footer content={{}} />
+    </div>
+  );
+};
 
 const Navbar = ({ content }: { content: any }) => {
   const [isScrolled, setIsScrolled] = useState(false);
@@ -54,29 +202,32 @@ const Navbar = ({ content }: { content: any }) => {
   }, []);
 
   const navLinks = [
-    { name: 'Кейси', href: '#cases' },
-    { name: 'Процес', href: '#process' },
-    { name: 'Про мене', href: '#about' },
-    { name: 'Контакти', href: '#contact' },
+    { name: 'Кейси', href: '/#cases' },
+    { name: 'Процес', href: '/#process' },
+    { name: 'Про мене', href: '/#about' },
+    { name: 'Блог', href: '/blog', isLink: true },
+    { name: 'Контакти', href: '/#contact' },
   ];
 
   return (
     <nav className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${isScrolled ? 'bg-white/80 backdrop-blur-md shadow-sm py-4' : 'bg-transparent py-6'}`}>
       <div className="container-custom flex items-center justify-between">
-        <a href="#" className="flex items-center">
-          <Logo />
-        </a>
+        <Logo />
 
         {/* Desktop Nav */}
         <div className="hidden md:flex items-center gap-8">
           {navLinks.map((link, i) => (
-            <a key={i} href={link.href} className="text-sm font-medium text-slate-600 hover:text-accent transition-colors">
+            <Link 
+              key={i} 
+              to={link.href} 
+              className="text-sm font-medium text-slate-600 hover:text-accent transition-colors"
+            >
               {link.name}
-            </a>
+            </Link>
           ))}
-          <a href="#contact" className="btn-primary py-2.5 px-6 text-sm">
+          <Link to="/#contact" className="btn-primary py-2.5 px-6 text-sm">
             {content?.primaryButtonText || 'Обговорити проєкт'}
-          </a>
+          </Link>
         </div>
 
         {/* Mobile Toggle */}
@@ -96,18 +247,22 @@ const Navbar = ({ content }: { content: any }) => {
           >
             <div className="flex flex-col gap-6">
               {navLinks.map((link, i) => (
-                <a 
+                <Link 
                   key={i} 
-                  href={link.href} 
-                  className="text-lg font-medium text-slate-900"
+                  to={link.href}
                   onClick={() => setIsMenuOpen(false)}
+                  className="text-lg font-medium text-slate-900"
                 >
                   {link.name}
-                </a>
+                </Link>
               ))}
-              <a href="#contact" className="btn-primary text-center" onClick={() => setIsMenuOpen(false)}>
+              <Link 
+                to="/#contact" 
+                onClick={() => setIsMenuOpen(false)}
+                className="btn-primary w-full text-center"
+              >
                 {content?.primaryButtonText || 'Обговорити проєкт'}
-              </a>
+              </Link>
             </div>
           </motion.div>
         )}
@@ -947,10 +1102,20 @@ const PricingModal = ({ isOpen, onClose, plan, contactContent }: { isOpen: boole
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!formData.name || !formData.contact) return;
+    if (!formData.name || !formData.contact || formData.comment.length < 10) return;
     
     setStatus('loading');
     try {
+      let recaptchaToken = null;
+      const siteKey = '6LeqkJssAAAAAO5Icslio7icxjfTEaGkN63z-a1S';
+      if ((window as any).grecaptcha) {
+        recaptchaToken = await new Promise<string>((resolve) => {
+          (window as any).grecaptcha.ready(() => {
+            (window as any).grecaptcha.execute(siteKey, { action: 'submit' }).then(resolve);
+          });
+        });
+      }
+
       const response = await fetch('/api/contact', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -958,7 +1123,8 @@ const PricingModal = ({ isOpen, onClose, plan, contactContent }: { isOpen: boole
           ...formData,
           message: formData.comment,
           plan: plan.name,
-          source: 'Pricing Modal'
+          source: 'Pricing Modal',
+          recaptchaToken
         })
       });
       
@@ -992,7 +1158,7 @@ const PricingModal = ({ isOpen, onClose, plan, contactContent }: { isOpen: boole
         initial={{ opacity: 0, scale: 0.9, y: 20 }}
         animate={{ opacity: 1, scale: 1, y: 0 }}
         exit={{ opacity: 0, scale: 0.9, y: 20 }}
-        className="relative w-full max-w-lg bg-white rounded-[40px] shadow-2xl p-8 md:p-12 max-h-[90vh] overflow-y-auto scrollbar-hide"
+        className="relative w-full max-w-lg bg-white rounded-3xl sm:rounded-[40px] shadow-2xl p-6 sm:p-8 md:p-12 max-h-[90vh] overflow-y-auto scrollbar-hide"
       >
         <button 
           onClick={onClose}
@@ -1062,6 +1228,8 @@ const PricingModal = ({ isOpen, onClose, plan, contactContent }: { isOpen: boole
                 <label className="block text-sm font-bold text-slate-900 uppercase tracking-wider mb-2">{contactContent?.formCommentLabel || 'Коментар'}</label>
                 <textarea 
                   rows={3}
+                  required
+                  minLength={10}
                   placeholder={contactContent?.formCommentPlaceholder || "Ваші побажання або запитання"}
                   value={formData.comment}
                   onChange={(e) => setFormData({ ...formData, comment: e.target.value })}
@@ -1208,16 +1376,27 @@ const Contacts = ({ content }: { content: any }) => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!formData.name || !formData.contact) return;
+    if (!formData.name || !formData.contact || formData.message.length < 10) return;
     
     setStatus('loading');
     try {
+      let recaptchaToken = null;
+      const siteKey = '6LeqkJssAAAAAO5Icslio7icxjfTEaGkN63z-a1S';
+      if ((window as any).grecaptcha) {
+        recaptchaToken = await new Promise<string>((resolve) => {
+          (window as any).grecaptcha.ready(() => {
+            (window as any).grecaptcha.execute(siteKey, { action: 'submit' }).then(resolve);
+          });
+        });
+      }
+
       const response = await fetch('/api/contact', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           ...formData,
-          source: 'Main Contact Form'
+          source: 'Main Contact Form',
+          recaptchaToken
         })
       });
       const result = await response.json();
@@ -1319,6 +1498,8 @@ const Contacts = ({ content }: { content: any }) => {
                 <div>
                   <label className="block text-sm font-bold text-slate-900 uppercase tracking-wider mb-2">{content?.formMessageLabel}</label>
                   <textarea 
+                    required
+                    minLength={10}
                     rows={4} 
                     value={formData.message}
                     onChange={(e) => setFormData({...formData, message: e.target.value})}
@@ -1421,34 +1602,10 @@ const VideoModal = ({ isOpen, onClose, videoUrl }: { isOpen: boolean, onClose: (
   );
 };
 
-const PublicSite = () => {
-  const [data, setData] = useState<any>(null);
-  const [loading, setLoading] = useState(true);
+const PublicSite = ({ data }: { data: any }) => {
   const [selectedCase, setSelectedCase] = useState<any>(null);
   const [selectedPlan, setSelectedPlan] = useState<any>(null);
   const [isVideoModalOpen, setIsVideoModalOpen] = useState(false);
-
-  useEffect(() => {
-    const fetchData = async () => {
-      try {
-        const response = await getContent();
-        setData(response.data);
-      } catch (err) {
-        console.error('Failed to fetch content', err);
-      } finally {
-        setLoading(false);
-      }
-    };
-    fetchData();
-  }, []);
-
-  if (loading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-white">
-        <Loader2 className="animate-spin text-accent" size={48} />
-      </div>
-    );
-  }
 
   if (!data || !data.content) {
     return (
@@ -1515,11 +1672,41 @@ const PublicSite = () => {
 };
 
 const App = () => {
+  const [data, setData] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        const response = await getContent();
+        setData(response.data);
+      } catch (err) {
+        console.error('Failed to fetch content', err);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchData();
+  }, []);
+
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-white">
+        <Loader2 className="animate-spin text-accent" size={48} />
+      </div>
+    );
+  }
+
+  const heroContent = data?.content?.hero || {};
+
   return (
     <Router>
+      <ScrollToHash />
       <Routes>
         <Route path="/admin/*" element={<Admin />} />
-        <Route path="/" element={<PublicSite />} />
+        <Route path="/blog" element={<BlogList content={heroContent} />} />
+        <Route path="/blog/:slug" element={<ArticleView content={heroContent} />} />
+        <Route path="/" element={<PublicSite data={data} />} />
       </Routes>
     </Router>
   );

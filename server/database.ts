@@ -138,6 +138,23 @@ export function initDb() {
     )
   `).run();
 
+  // Articles table
+  db.prepare(`
+    CREATE TABLE IF NOT EXISTS articles (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      slug TEXT UNIQUE NOT NULL,
+      title TEXT NOT NULL,
+      excerpt TEXT NOT NULL,
+      content TEXT NOT NULL,
+      image TEXT,
+      category TEXT,
+      is_published INTEGER DEFAULT 0,
+      published_at DATETIME,
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+    )
+  `).run();
+
   // Seed initial admin if not exists
   const adminExists = db.prepare('SELECT * FROM users WHERE username = ?').get('admin');
   if (!adminExists) {
@@ -187,7 +204,7 @@ function seedInitialContent() {
           'Мене звати Роман. Я займаюсь не дизайном заради дизайну, а створенням інструментів, які реально впливають на прибуток бізнесу.',
           'Мій підхід базується на трьох речах: маркетинг, логіка поведінки клієнта, автоматизація. Кожен сайт, який я роблю, має одну задачу — перетворювати відвідувачів у клієнтів.'
         ],
-        image: 'https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?fit=crop&w=800&h=1000',
+        image: '/roman-photo.jpg',
         experienceValue: '5+',
         experienceLabel: 'Років досвіду',
         skills: ['React', 'TypeScript', 'Node.js', 'Framer Motion', 'Tailwind CSS', 'JavaScript', 'HTML', 'CSS', 'Webflow', 'Автоматизація', 'UX/UI Дизайн', 'CRM Integration', 'Telegram Bots']

@@ -5,7 +5,23 @@ import db from "../database.js";
 const router = express.Router();
 
 router.post("/", async (req, res) => {
-  const { name, contact, message, plan, source } = req.body;
+  const { name, contact, message, plan, source, recaptchaToken } = req.body;
+
+  // reCAPTCHA verification
+  const secretKey = '6LeqkJssAAAAAJ575FSz-18ikpkwsw_ysd6k5M3u';
+  if (recaptchaToken) {
+    try {
+      const recaptchaRes = await axios.post(
+        `https://www.google.com/recaptcha/api/siteverify?secret=${secretKey}&response=${recaptchaToken}`
+      );
+      if (!recaptchaRes.data.success || recaptchaRes.data.score < 0.5) {
+        console.warn("reCAPTCHA verification failed for lead:", name);
+        return res.status(400).json({ message: "reCAPTCHA verification failed. Are you a bot?" });
+      }
+    } catch (err) {
+      console.error("reCAPTCHA error:", err);
+    }
+  }
 
   if (!name || !contact) {
     return res.status(400).json({ message: "Name and contact are required" });
@@ -31,13 +47,19 @@ router.post("/", async (req, res) => {
     try {
       console.log("Sending data to webhook:", webhookUrl);
       const webhookResponse = await axios.post(webhookUrl, {
-        name,
-        contact,
-        message,
-        plan,
+        name: name,
+        contact: contact,
+        phone: contact, // Alias for older scenarios
+        telegram: contact, // Alias for older scenarios
+        message: message || "",
+        comment: message || "", // Alias for older scenarios
+        plan: plan || "Not specified",
         source: source || "Website Contact Form",
         timestamp: new Date().toISOString()
       }, {
+        headers: {
+          'Content-Type': 'application/json'
+        },
         timeout: 10000 // 10 second timeout
       });
       console.log("Data sent to Make.com webhook successfully. Response status:", webhookResponse.status);

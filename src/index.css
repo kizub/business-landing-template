@@ -46,4 +46,17 @@
     -ms-overflow-style: none;
     scrollbar-width: none;
   }
+
+  /* reCAPTCHA badge styling - make it very small and semi-transparent */
+  .grecaptcha-badge {
+    opacity: 0.1 !important;
+    transform: scale(0.5) !important;
+    transform-origin: bottom right !important;
+    transition: opacity 0.3s ease !important;
+    pointer-events: auto !important;
+  }
+  
+  .grecaptcha-badge:hover {
+    opacity: 0.8 !important;
+  }
 }

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { logout, getContent, updateSection, updateCase, createCase, deleteCase, updatePricing, updateProcess, updateProblem, updateBenefit, updateFaq, createFaq, deleteFaq, uploadFile, getLeads, updateLeadStatus, deleteLead } from '../services/api';
+import { logout, getContent, updateSection, updateCase, createCase, deleteCase, updatePricing, updateProcess, updateProblem, updateBenefit, updateFaq, createFaq, deleteFaq, uploadFile, getLeads, updateLeadStatus, deleteLead, getLeadStats, getStatusDistribution, getAdminArticles, createArticle, updateArticle, deleteArticle } from '../services/api';
 import { 
   Layout, 
   LogOut, 
@@ -27,8 +27,23 @@ import {
   Calendar,
   Filter,
   CheckCircle,
-  Clock
+  Clock,
+  BarChart as BarChartIcon,
+  FileText
 } from 'lucide-react';
+
+import { 
+  ResponsiveContainer, 
+  BarChart, 
+  Bar, 
+  XAxis, 
+  YAxis, 
+  Tooltip, 
+  CartesianGrid, 
+  PieChart, 
+  Pie, 
+  Cell 
+} from 'recharts';
 
 interface DashboardProps {
   onLogout: () => void;
@@ -43,7 +58,9 @@ const Dashboard: React.FC<DashboardProps> = ({ onLogout }) => {
   const [message, setMessage] = useState({ text: '', type: '' });
 
   const tabs = [
-    { id: 'leads', name: 'Leads', icon: <Mail size={20} /> },
+    { id: 'stats', name: 'Аналітика', icon: <BarChartIcon size={20} /> },
+    { id: 'leads', name: 'Заявки', icon: <Mail size={20} /> },
+    { id: 'articles', name: 'Блог', icon: <FileText size={20} /> },
     { id: 'hero', name: 'Hero', icon: <Home size={20} /> },
     { id: 'problems', name: 'Problems', icon: <AlertCircle size={20} /> },
     { id: 'benefits', name: 'Benefits', icon: <Zap size={20} /> },
@@ -253,6 +270,15 @@ const Dashboard: React.FC<DashboardProps> = ({ onLogout }) => {
 
           {/* Editor Area */}
           <div className="bg-white rounded-[32px] p-8 shadow-sm border border-slate-100">
+            {activeTab === 'stats' && (
+              <StatsDashboard />
+            )}
+            {activeTab === 'articles' && (
+              <ArticlesEditor 
+                onUpload={handleFileUpload}
+                saving={saving}
+              />
+            )}
             {activeTab === 'leads' && (
               <LeadsEditor 
                 leads={leads} 
@@ -1167,6 +1193,220 @@ const ImagePicker = ({ label, value, onChange, onUpload }: any) => {
           <Input label="URL зображення" value={value} onChange={onChange} />
           <p className="text-xs text-slate-400 mt-2">Можна вставити посилання або завантажити файл</p>
         </div>
+      </div>
+    </div>
+  );
+};
+
+const StatsDashboard = () => {
+  const [leadStats, setLeadStats] = useState<any[]>([]);
+  const [statusDist, setStatusDist] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchStats = async () => {
+      try {
+        const [leadsRes, statusRes] = await Promise.all([
+          getLeadStats(),
+          getStatusDistribution()
+        ]);
+        setLeadStats(leadsRes.data);
+        setStatusDist(statusRes.data);
+      } catch (err) {
+        console.error('Failed to fetch stats', err);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchStats();
+  }, []);
+
+  if (loading) return <div className="flex justify-center py-12"><Loader2 className="animate-spin text-accent" /></div>;
+
+  const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884d8'];
+
+  return (
+    <div className="space-y-10">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+        <div className="bg-slate-50 p-6 rounded-3xl border border-slate-100">
+          <h3 className="text-lg font-bold text-slate-900 mb-6">Динаміка заявок (30 днів)</h3>
+          <div className="h-[300px] w-full">
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart data={leadStats}>
+                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e2e8f0" />
+                <XAxis 
+                  dataKey="date" 
+                  axisLine={false} 
+                  tickLine={false} 
+                  tick={{fill: '#64748b', fontSize: 12}}
+                  tickFormatter={(str) => {
+                    if (!str) return '';
+                    const parts = str.split('-');
+                    return parts.length >= 3 ? `${parts[2]}.${parts[1]}` : str;
+                  }}
+                />
+                <YAxis axisLine={false} tickLine={false} tick={{fill: '#64748b', fontSize: 12}} />
+                <Tooltip 
+                  contentStyle={{borderRadius: '16px', border: 'none', boxShadow: '0 10px 15px -3px rgb(0 0 0 / 0.1)'}}
+                />
+                <Bar dataKey="count" fill="#F27D26" radius={[4, 4, 0, 0]} />
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
+        </div>
+
+        <div className="bg-slate-50 p-6 rounded-3xl border border-slate-100">
+          <h3 className="text-lg font-bold text-slate-900 mb-6">Статуси заявок</h3>
+          <div className="h-[300px] w-full">
+            <ResponsiveContainer width="100%" height="100%">
+              <PieChart>
+                <Pie
+                  data={statusDist}
+                  cx="50%"
+                  cy="50%"
+                  innerRadius={60}
+                  outerRadius={80}
+                  paddingAngle={5}
+                  dataKey="count"
+                  nameKey="status"
+                >
+                  {statusDist.map((entry, index) => (
+                    <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                  ))}
+                </Pie>
+                <Tooltip 
+                  contentStyle={{borderRadius: '16px', border: 'none', boxShadow: '0 10px 15px -3px rgb(0 0 0 / 0.1)'}}
+                />
+              </PieChart>
+            </ResponsiveContainer>
+          </div>
+          <div className="flex flex-wrap gap-4 justify-center mt-4">
+            {statusDist.map((entry, index) => (
+              <div key={index} className="flex items-center gap-2">
+                <div className="w-3 h-3 rounded-full" style={{backgroundColor: COLORS[index % COLORS.length]}} />
+                <span className="text-sm font-medium text-slate-600 capitalize">{entry.status}: {entry.count}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+const ArticlesEditor = ({ onUpload, saving }: any) => {
+  const [articles, setArticles] = useState<any[]>([]);
+  const [editing, setEditing] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    fetchArticles();
+  }, []);
+
+  const fetchArticles = async () => {
+    setLoading(true);
+    try {
+      const res = await getAdminArticles();
+      setArticles(res.data);
+    } catch (err) {
+      console.error('Failed to fetch articles', err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleSave = async (form: any) => {
+    try {
+      if (form.id) {
+        await updateArticle(form.id, form);
+      } else {
+        await createArticle(form);
+      }
+      setEditing(null);
+      fetchArticles();
+    } catch (err) {
+      console.error('Failed to save article', err);
+    }
+  };
+
+  const handleDelete = async (id: number) => {
+    if (!window.confirm('Ви впевнені?')) return;
+    try {
+      await deleteArticle(id);
+      fetchArticles();
+    } catch (err) {
+      console.error('Failed to delete article', err);
+    }
+  };
+
+  if (loading) return <div className="flex justify-center py-12"><Loader2 className="animate-spin text-accent" /></div>;
+
+  if (editing) {
+    return (
+      <div className="space-y-6">
+        <div className="flex items-center justify-between">
+          <h3 className="text-xl font-bold text-slate-900">{editing.id ? 'Редагувати статтю' : 'Нова стаття'}</h3>
+          <button onClick={() => setEditing(null)} className="p-2 hover:bg-slate-100 rounded-full"><X size={20} /></button>
+        </div>
+        
+        <div className="grid grid-cols-2 gap-4">
+          <Input label="Заголовок" value={editing.title} onChange={(v) => setEditing({...editing, title: v, slug: editing.id ? editing.slug : v.toLowerCase().replace(/ /g, '-').replace(/[^\w-]+/g, '')})} />
+          <Input label="Slug (URL)" value={editing.slug} onChange={(v) => setEditing({...editing, slug: v})} />
+        </div>
+        
+        <div className="grid grid-cols-2 gap-4">
+          <Input label="Категорія" value={editing.category} onChange={(v) => setEditing({...editing, category: v})} />
+          <div className="flex items-center gap-2 pt-8">
+            <input type="checkbox" checked={editing.is_published} onChange={(e) => setEditing({...editing, is_published: e.target.checked})} />
+            <label className="text-sm font-bold text-slate-700 uppercase tracking-wider">Опубліковано</label>
+          </div>
+        </div>
+
+        <Textarea label="Короткий опис (Excerpt)" value={editing.excerpt} onChange={(v) => setEditing({...editing, excerpt: v})} />
+        <Textarea label="Контент (Markdown)" value={editing.content} onChange={(v) => setEditing({...editing, content: v})} rows={10} />
+        
+        <ImagePicker label="Обкладинка" value={editing.image} onChange={(v) => setEditing({...editing, image: v})} onUpload={onUpload} />
+        
+        <SaveButton onClick={() => handleSave(editing)} loading={saving} />
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-6">
+      <div className="flex justify-between items-center">
+        <h3 className="text-xl font-bold text-slate-900">Статті блогу</h3>
+        <button 
+          onClick={() => setEditing({ title: '', slug: '', excerpt: '', content: '', image: '', category: 'Маркетинг', is_published: false })}
+          className="btn-primary flex items-center gap-2 px-4 py-2 text-sm"
+        >
+          <Plus size={16} /> Додати статтю
+        </button>
+      </div>
+
+      <div className="grid gap-4">
+        {articles.map((article) => (
+          <div key={article.id} className="p-4 bg-slate-50 rounded-2xl flex items-center justify-between group">
+            <div className="flex items-center gap-4">
+              <div className="w-16 h-16 bg-slate-200 rounded-xl overflow-hidden">
+                {article.image && <img src={article.image} className="w-full h-full object-cover" />}
+              </div>
+              <div>
+                <h4 className="font-bold text-slate-900">{article.title}</h4>
+                <div className="flex items-center gap-3 mt-1">
+                  <span className="text-xs font-bold text-accent uppercase tracking-wider">{article.category}</span>
+                  <span className={`text-[10px] font-bold uppercase px-2 py-0.5 rounded ${article.is_published ? 'bg-green-100 text-green-600' : 'bg-slate-200 text-slate-500'}`}>
+                    {article.is_published ? 'Published' : 'Draft'}
+                  </span>
+                </div>
+              </div>
+            </div>
+            <div className="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+              <button onClick={() => setEditing(article)} className="p-2 text-slate-400 hover:text-accent hover:bg-white rounded-lg transition-all"><Settings size={18} /></button>
+              <button onClick={() => handleDelete(article.id)} className="p-2 text-slate-400 hover:text-red-500 hover:bg-white rounded-lg transition-all"><Trash2 size={18} /></button>
+            </div>
+          </div>
+        ))}
       </div>
     </div>
   );
