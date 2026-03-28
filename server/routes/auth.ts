@@ -17,12 +17,14 @@ router.post("/login", (req, res) => {
   const CURRENT_JWT_SECRET = process.env.JWT_SECRET?.trim();
 
   console.log(`Login attempt for user: [${username}]`);
+  console.log(`Environment check: JWT_SECRET exists: ${!!CURRENT_JWT_SECRET}, NODE_ENV: ${process.env.NODE_ENV}`);
 
   if (!username || !password) {
     return res.status(400).json({ message: "Username and password required" });
   }
 
-  const user = db.prepare("SELECT * FROM users WHERE username = ?").get(username) as any;
+  // Case-insensitive search for better UX, but we'll check exact match if needed
+  const user = db.prepare("SELECT * FROM users WHERE LOWER(username) = LOWER(?)").get(username) as any;
 
   if (!user) {
     console.error(`Login failed: User '${username}' not found in database.`);
@@ -36,7 +38,7 @@ router.post("/login", (req, res) => {
   
   if (!isPasswordValid) {
     console.error(`Login failed: Incorrect password for user '${username}'.`);
-    console.log(`Debug: Input password length: ${password.length}, DB hash length: ${user.password.length}`);
+    console.log(`Debug: Input password length: ${password.length}, DB hash length: ${user.password?.length || 0}`);
     return res.status(401).json({ message: "Invalid credentials" });
   }
 
