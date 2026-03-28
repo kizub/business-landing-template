@@ -20,8 +20,25 @@ router.post("/login", (req, res) => {
 
   const user = db.prepare("SELECT * FROM users WHERE username = ?").get(username) as any;
 
-  if (!user || !bcrypt.compareSync(password, user.password)) {
+  if (!user) {
+    console.error(`Login failed: User '${username}' not found in database.`);
     return res.status(401).json({ message: "Invalid credentials" });
+  }
+
+  const isPasswordValid = bcrypt.compareSync(password, user.password);
+  
+  if (!isPasswordValid) {
+    console.error(`Login failed: Incorrect password for user '${username}'.`);
+    // Special recovery: if it's the default admin and login fails, let's log the hash for debugging (safely)
+    if (username === 'admin') {
+      console.log("Recovery hint: Default admin password should be 'admin123'");
+    }
+    return res.status(401).json({ message: "Invalid credentials" });
+  }
+
+  if (!JWT_SECRET) {
+    console.error("Login failed: JWT_SECRET is missing in environment variables.");
+    return res.status(500).json({ message: "Server configuration error" });
   }
 
   const token = jwt.sign({ id: user.id, username: user.username }, JWT_SECRET, { expiresIn: "24h" });

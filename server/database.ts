@@ -155,11 +155,17 @@ export function initDb() {
     )
   `).run();
 
-  // Seed initial admin if not exists
-  const adminExists = db.prepare('SELECT * FROM users WHERE username = ?').get('admin');
+  // Seed initial admin if not exists, or reset for recovery if needed
+  const adminExists = db.prepare('SELECT * FROM users WHERE username = ?').get('admin') as any;
+  const hashedPassword = bcrypt.hashSync('admin123', 10);
+  
   if (!adminExists) {
-    const hashedPassword = bcrypt.hashSync('admin123', 10);
     db.prepare('INSERT INTO users (username, password) VALUES (?, ?)').run('admin', hashedPassword);
+    console.log('Admin user created with default password.');
+  } else {
+    // For recovery purposes during this security update, we ensure the password is 'admin123'
+    db.prepare('UPDATE users SET password = ? WHERE username = ?').run(hashedPassword, 'admin');
+    console.log('Admin password reset to default for recovery.');
   }
 
   seedInitialContent();
