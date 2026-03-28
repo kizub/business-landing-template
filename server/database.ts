@@ -155,9 +155,8 @@ export function initDb() {
     )
   `).run();
 
-  // Seed initial admin from environment variables or defaults
-  const envUsername = process.env.ADMIN_USERNAME || 'admin';
-  const envPassword = process.env.ADMIN_PASSWORD || 'admin123';
+  const envUsername = (process.env.ADMIN_USERNAME || 'admin').trim();
+  const envPassword = (process.env.ADMIN_PASSWORD || 'admin123').trim();
   
   // Ensure the environment-defined admin exists
   const adminExists = db.prepare('SELECT * FROM users WHERE username = ?').get(envUsername) as any;
@@ -165,10 +164,10 @@ export function initDb() {
   
   if (!adminExists) {
     db.prepare('INSERT OR REPLACE INTO users (username, password) VALUES (?, ?)').run(envUsername, hashedPassword);
-    console.log(`Admin user '${envUsername}' ensured in database.`);
+    console.log(`Admin user '${envUsername}' ensured in database (trimmed).`);
   } else {
     db.prepare('UPDATE users SET password = ? WHERE username = ?').run(hashedPassword, envUsername);
-    console.log(`Password for '${envUsername}' updated from environment.`);
+    console.log(`Password for '${envUsername}' updated from environment (trimmed).`);
   }
 
   // Fallback: Also ensure 'admin' exists with 'admin123' if it's different from env

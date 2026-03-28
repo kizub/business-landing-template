@@ -12,8 +12,11 @@ if (!JWT_SECRET) {
 
 // ПУБЛІЧНИЙ: Вхід адміністратора
 router.post("/login", (req, res) => {
-  const { username, password } = req.body;
-  const CURRENT_JWT_SECRET = process.env.JWT_SECRET;
+  const username = req.body.username?.trim();
+  const password = req.body.password?.trim();
+  const CURRENT_JWT_SECRET = process.env.JWT_SECRET?.trim();
+
+  console.log(`Login attempt for user: [${username}]`);
 
   if (!username || !password) {
     return res.status(400).json({ message: "Username and password required" });
@@ -23,6 +26,9 @@ router.post("/login", (req, res) => {
 
   if (!user) {
     console.error(`Login failed: User '${username}' not found in database.`);
+    // Log available users for debugging (only in dev/debug mode)
+    const allUsers = db.prepare("SELECT username FROM users").all();
+    console.log("Available users in DB:", allUsers.map((u: any) => u.username));
     return res.status(401).json({ message: "Invalid credentials" });
   }
 
@@ -30,18 +36,16 @@ router.post("/login", (req, res) => {
   
   if (!isPasswordValid) {
     console.error(`Login failed: Incorrect password for user '${username}'.`);
-    // Special recovery: if it's the default admin and login fails, let's log the hash for debugging (safely)
-    if (username === 'admin') {
-      console.log("Recovery hint: Default admin password should be 'admin123'");
-    }
+    console.log(`Debug: Input password length: ${password.length}, DB hash length: ${user.password.length}`);
     return res.status(401).json({ message: "Invalid credentials" });
   }
 
   if (!CURRENT_JWT_SECRET) {
-    console.error("Login failed: JWT_SECRET is missing in environment variables.");
+    console.error("Login failed: JWT_SECRET is missing or empty in environment variables.");
     return res.status(500).json({ message: "Server configuration error" });
   }
 
+  console.log("Login successful, signing token...");
   const token = jwt.sign({ id: user.id, username: user.username }, CURRENT_JWT_SECRET, { expiresIn: "24h" });
 
   res.cookie("admin_token", token, {
