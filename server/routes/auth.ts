@@ -13,6 +13,7 @@ if (!JWT_SECRET) {
 // ПУБЛІЧНИЙ: Вхід адміністратора
 router.post("/login", (req, res) => {
   const { username, password } = req.body;
+  const CURRENT_JWT_SECRET = process.env.JWT_SECRET;
 
   if (!username || !password) {
     return res.status(400).json({ message: "Username and password required" });
@@ -36,12 +37,12 @@ router.post("/login", (req, res) => {
     return res.status(401).json({ message: "Invalid credentials" });
   }
 
-  if (!JWT_SECRET) {
+  if (!CURRENT_JWT_SECRET) {
     console.error("Login failed: JWT_SECRET is missing in environment variables.");
     return res.status(500).json({ message: "Server configuration error" });
   }
 
-  const token = jwt.sign({ id: user.id, username: user.username }, JWT_SECRET, { expiresIn: "24h" });
+  const token = jwt.sign({ id: user.id, username: user.username }, CURRENT_JWT_SECRET, { expiresIn: "24h" });
 
   res.cookie("admin_token", token, {
     httpOnly: true,

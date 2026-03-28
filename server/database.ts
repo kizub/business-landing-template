@@ -155,17 +155,21 @@ export function initDb() {
     )
   `).run();
 
-  // Seed initial admin if not exists, or reset for recovery if needed
-  const adminExists = db.prepare('SELECT * FROM users WHERE username = ?').get('admin') as any;
-  const hashedPassword = bcrypt.hashSync('admin123', 10);
+  // Seed initial admin from environment variables or defaults
+  const envUsername = process.env.ADMIN_USERNAME || 'admin';
+  const envPassword = process.env.ADMIN_PASSWORD || 'admin123';
+  
+  const adminExists = db.prepare('SELECT * FROM users WHERE username = ?').get(envUsername) as any;
+  const hashedPassword = bcrypt.hashSync(envPassword, 10);
   
   if (!adminExists) {
-    db.prepare('INSERT INTO users (username, password) VALUES (?, ?)').run('admin', hashedPassword);
-    console.log('Admin user created with default password.');
+    // If we changed username in secrets, let's make sure we don't have multiple admins unless intended
+    // For simplicity, we just ensure the one from env exists and has the right password
+    db.prepare('INSERT OR REPLACE INTO users (username, password) VALUES (?, ?)').run(envUsername, hashedPassword);
+    console.log(`Admin user '${envUsername}' ensured in database.`);
   } else {
-    // For recovery purposes during this security update, we ensure the password is 'admin123'
-    db.prepare('UPDATE users SET password = ? WHERE username = ?').run(hashedPassword, 'admin');
-    console.log('Admin password reset to default for recovery.');
+    db.prepare('UPDATE users SET password = ? WHERE username = ?').run(hashedPassword, envUsername);
+    console.log(`Password for '${envUsername}' updated from environment.`);
   }
 
   seedInitialContent();
