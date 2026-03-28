@@ -1102,23 +1102,30 @@ const PricingModal = ({ isOpen, onClose, plan, contactContent }: { isOpen: boole
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!formData.name || !formData.contact || formData.comment.length < 10) return;
+    if (!formData.name || !formData.contact || formData.comment.length < 2) return;
     
     setStatus('loading');
     try {
       let recaptchaToken = null;
       const siteKey = import.meta.env.VITE_RECAPTCHA_SITE_KEY;
       if ((window as any).grecaptcha) {
-        recaptchaToken = await new Promise<string>((resolve) => {
-          (window as any).grecaptcha.ready(() => {
-            (window as any).grecaptcha.execute(siteKey, { action: 'submit' }).then(resolve);
-          });
-        });
+        recaptchaToken = await Promise.race([
+          new Promise<string>((resolve) => {
+            (window as any).grecaptcha.ready(() => {
+              (window as any).grecaptcha.execute(siteKey, { action: 'submit' }).then(resolve);
+            });
+          }),
+          new Promise<null>((resolve) => setTimeout(() => resolve(null), 3000)) // 3s timeout for reCAPTCHA
+        ]);
       }
+
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 15000); // 15s timeout for fetch
 
       const response = await fetch('/api/contact', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
+        signal: controller.signal,
         body: JSON.stringify({
           ...formData,
           message: formData.comment,
@@ -1127,6 +1134,7 @@ const PricingModal = ({ isOpen, onClose, plan, contactContent }: { isOpen: boole
           recaptchaToken
         })
       });
+      clearTimeout(timeoutId);
       
       if (response.ok) {
         setStatus('success');
@@ -1376,29 +1384,37 @@ const Contacts = ({ content }: { content: any }) => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!formData.name || !formData.contact || formData.message.length < 10) return;
+    if (!formData.name || !formData.contact || formData.message.length < 2) return;
     
     setStatus('loading');
     try {
       let recaptchaToken = null;
       const siteKey = import.meta.env.VITE_RECAPTCHA_SITE_KEY;
       if ((window as any).grecaptcha) {
-        recaptchaToken = await new Promise<string>((resolve) => {
-          (window as any).grecaptcha.ready(() => {
-            (window as any).grecaptcha.execute(siteKey, { action: 'submit' }).then(resolve);
-          });
-        });
+        recaptchaToken = await Promise.race([
+          new Promise<string>((resolve) => {
+            (window as any).grecaptcha.ready(() => {
+              (window as any).grecaptcha.execute(siteKey, { action: 'submit' }).then(resolve);
+            });
+          }),
+          new Promise<null>((resolve) => setTimeout(() => resolve(null), 3000)) // 3s timeout for reCAPTCHA
+        ]);
       }
+
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 15000); // 15s timeout for fetch
 
       const response = await fetch('/api/contact', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
+        signal: controller.signal,
         body: JSON.stringify({
           ...formData,
           source: 'Main Contact Form',
           recaptchaToken
         })
       });
+      clearTimeout(timeoutId);
       const result = await response.json();
       if (response.ok) {
         setStatus('success');

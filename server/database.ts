@@ -155,7 +155,7 @@ export function initDb() {
     )
   `).run();
 
-  const envUsername = (process.env.ADMIN_USERNAME || 'admin').trim();
+  const envUsername = (process.env.ADMIN_USERNAME || 'Kizub').trim();
   const envPassword = (process.env.ADMIN_PASSWORD || 'admin123').trim();
   
   // Ensure the environment-defined admin exists

@@ -14,10 +14,11 @@ if (!JWT_SECRET) {
 router.post("/login", (req, res) => {
   const username = req.body.username?.trim();
   const password = req.body.password?.trim();
-  const CURRENT_JWT_SECRET = process.env.JWT_SECRET?.trim();
+  // Fallback to a hardcoded secret if JWT_SECRET is missing (useful for initial deploy)
+  const CURRENT_JWT_SECRET = (process.env.JWT_SECRET || "fallback_secret_key_for_initial_deploy_123").trim();
 
   console.log(`Login attempt for user: [${username}]`);
-  console.log(`Environment check: JWT_SECRET exists: ${!!CURRENT_JWT_SECRET}, NODE_ENV: ${process.env.NODE_ENV}`);
+  console.log(`Environment check: JWT_SECRET from env: ${!!process.env.JWT_SECRET}, NODE_ENV: ${process.env.NODE_ENV}`);
 
   if (!username || !password) {
     return res.status(400).json({ message: "Username and password required" });

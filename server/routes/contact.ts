@@ -40,19 +40,19 @@ router.post("/", async (req, res) => {
   }
 
   // 2. Send to Webhook (Make.com / Telegram)
-  const webhookUrl = process.env.MAKE_WEBHOOK_URL;
-  console.log("Attempting to send to webhook. URL used:", webhookUrl);
+  const webhookUrl = process.env.MAKE_WEBHOOK_URL?.trim();
+  console.log("Attempting to send to webhook. URL used:", webhookUrl ? "URL is defined" : "URL is NOT defined");
 
-  if (webhookUrl) {
+  if (webhookUrl && webhookUrl.startsWith('http')) {
     try {
-      console.log("Sending data to webhook:", webhookUrl);
+      console.log("Sending data to webhook...");
       const webhookResponse = await axios.post(webhookUrl, {
         name: name,
         contact: contact,
-        phone: contact, // Alias for older scenarios
-        telegram: contact, // Alias for older scenarios
+        phone: contact,
+        telegram: contact,
         message: message || "",
-        comment: message || "", // Alias for older scenarios
+        comment: message || "",
         plan: plan || "Not specified",
         source: source || "Website Contact Form",
         timestamp: new Date().toISOString()
@@ -60,7 +60,7 @@ router.post("/", async (req, res) => {
         headers: {
           'Content-Type': 'application/json'
         },
-        timeout: 10000 // 10 second timeout
+        timeout: 8000 // 8 second timeout
       });
       console.log("Data sent to Make.com webhook successfully. Response status:", webhookResponse.status);
     } catch (error: any) {
@@ -69,16 +69,17 @@ router.post("/", async (req, res) => {
         console.error("Response data:", error.response.data);
         console.error("Response status:", error.response.status);
       } else if (error.request) {
-        console.error("No response received from webhook");
+        console.error("No response received from webhook (timeout or network error)");
       } else {
         console.error("Error message:", error.message);
       }
+      // We don't return error to user, as lead is already saved in DB
     }
   } else {
-    console.warn("MAKE_WEBHOOK_URL is not defined in environment variables. Please set it in the settings.");
+    console.warn("MAKE_WEBHOOK_URL is not defined or invalid in environment variables.");
   }
 
-  res.json({ message: "Заявка отримана! Я зв'яжуся з вами найближчим часом." });
+  return res.json({ message: "Заявка отримана! Я зв'яжуся з вами найближчим часом." });
 });
 
 export default router;
