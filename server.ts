@@ -103,28 +103,164 @@ async function startServer() {
         if (fs.existsSync(indexPath)) {
           let html = fs.readFileSync(indexPath, "utf-8");
           
-          // Inject SEO tags and content
-          const seoContent = `
-            <title>${article.title} | Roman Dev Blog</title>
-            <meta name="description" content="${article.excerpt}">
-            <meta property="og:title" content="${article.title}">
-            <meta property="og:description" content="${article.excerpt}">
-            <meta property="og:image" content="${article.image || ''}">
+          const title = article.seo_title || `${article.title} | Roman Dev Blog`;
+          const description = article.seo_description || article.excerpt || "Стаття Roman Dev";
+          const image = article.image || '';
+          
+          // Parse JSON fields safely
+          let faq = [];
+          try {
+            faq = typeof article.faq === 'string' ? JSON.parse(article.faq) : (article.faq || []);
+          } catch (e) { faq = []; }
+
+          let systemIncludes = [];
+          try {
+            systemIncludes = typeof article.system_includes === 'string' ? JSON.parse(article.system_includes) : (article.system_includes || []);
+          } catch (e) { systemIncludes = []; }
+
+          let targetAudience = [];
+          try {
+            targetAudience = typeof article.target_audience === 'string' ? JSON.parse(article.target_audience) : (article.target_audience || []);
+          } catch (e) { targetAudience = []; }
+
+          // JSON-LD for Article
+          const jsonLd = {
+            "@context": "https://schema.org",
+            "@type": "BlogPosting",
+            "headline": article.title,
+            "description": description,
+            "image": image,
+            "author": {
+              "@type": "Person",
+              "name": "Roman Dev"
+            },
+            "datePublished": article.published_at || article.created_at,
+            "mainEntityOfPage": {
+              "@type": "WebPage",
+              "@id": `https://roman-dev.com/blog/${article.slug}`
+            }
+          };
+
+          // FAQ JSON-LD
+          let faqJsonLd = null;
+          if (faq && faq.length > 0) {
+            faqJsonLd = {
+              "@context": "https://schema.org",
+              "@type": "FAQPage",
+              "mainEntity": faq.map((item: any) => ({
+                "@type": "Question",
+                "name": item.question,
+                "acceptedAnswer": {
+                  "@type": "Answer",
+                  "text": item.answer
+                }
+              }))
+            };
+          }
+
+          const seoTags = `
+            <title>${title}</title>
+            <meta name="description" content="${description}">
+            <meta property="og:title" content="${title}">
+            <meta property="og:description" content="${description}">
+            <meta property="og:image" content="${image}">
+            <meta property="og:type" content="article">
+            <link rel="canonical" href="https://roman-dev.com/blog/${article.slug}">
+            <script type="application/ld+json">${JSON.stringify(jsonLd)}</script>
+            ${faqJsonLd ? `<script type="application/ld+json">${JSON.stringify(faqJsonLd)}</script>` : ''}
+          `;
+
+          const articleContent = `
             <article style="display:none">
               <h1>${article.title}</h1>
               <div class="excerpt">${article.excerpt}</div>
               <div class="content">${article.content}</div>
+              ${faq.length > 0 ? `
+                <section class="faq">
+                  <h2>FAQ</h2>
+                  ${faq.map((f: any) => `<div><h3>${f.question}</h3><p>${f.answer}</p></div>`).join('')}
+                </section>
+              ` : ''}
+              ${systemIncludes.length > 0 ? `
+                <section class="includes">
+                  <h2>Що входить у систему:</h2>
+                  <ul>
+                    ${systemIncludes.map((s: any) => `<li>${s}</li>`).join('')}
+                  </ul>
+                </section>
+              ` : ''}
+              ${targetAudience.length > 0 ? `
+                <section class="audience">
+                  <h2>Кому підходить:</h2>
+                  <ul>
+                    ${targetAudience.map((t: any) => `<li>${t}</li>`).join('')}
+                  </ul>
+                </section>
+              ` : ''}
             </article>
           `;
           
-          // We keep the article hidden for users (React will take over), 
-          // but it's fully visible to search engines in the HTML.
-          html = html.replace('<div id="root"></div>', `<div id="root">${seoContent}</div>`);
+          // Inject into head
+          html = html.replace('</head>', `${seoTags}</head>`);
+          // Inject into root
+          html = html.replace('<div id="root"></div>', `<div id="root">${articleContent}</div>`);
+          
           return res.send(html);
         }
       }
     } catch (err) {
       console.error("SEO Injection error:", err);
+    }
+    next();
+  });
+
+  // SEO Injection for Blog List
+  app.get("/blog", async (req, res, next) => {
+    try {
+      const distPath = path.join(process.cwd(), "dist");
+      const indexPath = path.join(distPath, "index.html");
+      if (fs.existsSync(indexPath)) {
+        let html = fs.readFileSync(indexPath, "utf-8");
+        const seoTags = `
+          <title>Блог | Roman Dev - Автоматизація та SEO</title>
+          <meta name="description" content="Корисні статті про автоматизацію бізнесу, створення сайтів та SEO-стратегії від Roman Dev.">
+          <link rel="canonical" href="https://roman-dev.com/blog">
+        `;
+        html = html.replace('</head>', `${seoTags}</head>`);
+        return res.send(html);
+      }
+    } catch (err) {
+      console.error("Blog list SEO error:", err);
+    }
+    next();
+  });
+
+  // SEO Injection for Home
+  app.get("/", async (req, res, next) => {
+    try {
+      const seo = await db.get("SELECT content_json FROM site_content WHERE section_key = 'seo'");
+      const seoData = seo ? JSON.parse(seo.content_json) : null;
+      
+      const distPath = path.join(process.cwd(), "dist");
+      const indexPath = path.join(distPath, "index.html");
+      
+      if (fs.existsSync(indexPath)) {
+        let html = fs.readFileSync(indexPath, "utf-8");
+        if (seoData) {
+          const seoTags = `
+            <title>${seoData.title}</title>
+            <meta name="description" content="${seoData.description}">
+            <meta property="og:title" content="${seoData.ogTitle || seoData.title}">
+            <meta property="og:description" content="${seoData.ogDescription || seoData.description}">
+            <meta property="og:image" content="${seoData.ogImage || ''}">
+            <link rel="canonical" href="https://roman-dev.com/">
+          `;
+          html = html.replace('</head>', `${seoTags}</head>`);
+        }
+        return res.send(html);
+      }
+    } catch (err) {
+      console.error("Home SEO error:", err);
     }
     next();
   });

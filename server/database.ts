@@ -204,6 +204,11 @@ async function ensureTables() {
       category TEXT,
       is_published INTEGER DEFAULT 0,
       published_at TIMESTAMP,
+      system_includes JSONB,
+      target_audience JSONB,
+      faq JSONB,
+      seo_title TEXT,
+      seo_description TEXT,
       created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
       updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
     )`

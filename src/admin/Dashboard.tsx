@@ -1563,6 +1563,11 @@ const ArticlesEditor = ({ onUpload, saving }: any) => {
           <Input label="Заголовок" value={editing.title} onChange={(v) => setEditing({...editing, title: v, slug: editing.id ? editing.slug : v.toLowerCase().replace(/ /g, '-').replace(/[^\w-]+/g, '')})} />
           <Input label="Slug (URL)" value={editing.slug} onChange={(v) => setEditing({...editing, slug: v})} />
         </div>
+
+        <div className="grid grid-cols-2 gap-4">
+          <Input label="SEO Title" value={editing.seo_title || ''} onChange={(v) => setEditing({...editing, seo_title: v})} />
+          <Input label="SEO Description" value={editing.seo_description || ''} onChange={(v) => setEditing({...editing, seo_description: v})} />
+        </div>
         
         <div className="grid grid-cols-2 gap-4">
           <Input label="Категорія" value={editing.category} onChange={(v) => setEditing({...editing, category: v})} />
@@ -1575,6 +1580,65 @@ const ArticlesEditor = ({ onUpload, saving }: any) => {
         <Textarea label="Короткий опис (Excerpt)" value={editing.excerpt} onChange={(v) => setEditing({...editing, excerpt: v})} />
         <Textarea label="Контент (Markdown)" value={editing.content} onChange={(v) => setEditing({...editing, content: v})} rows={10} />
         
+        <div className="space-y-4 border-t border-slate-100 pt-6">
+          <label className="block text-sm font-bold text-slate-700 uppercase tracking-wider">Що входить у систему</label>
+          {(editing.system_includes || []).map((item: string, i: number) => (
+            <div key={i} className="flex gap-2">
+              <Input value={item} onChange={(v) => {
+                const newList = [...editing.system_includes];
+                newList[i] = v;
+                setEditing({...editing, system_includes: newList});
+              }} />
+              <button onClick={() => {
+                const newList = editing.system_includes.filter((_: any, idx: number) => idx !== i);
+                setEditing({...editing, system_includes: newList});
+              }} className="p-2 text-red-500 hover:bg-red-50 rounded-lg"><Trash2 size={18} /></button>
+            </div>
+          ))}
+          <button onClick={() => setEditing({...editing, system_includes: [...(editing.system_includes || []), '']})} className="flex items-center gap-2 text-accent font-bold text-sm"><Plus size={16} /> Додати пункт</button>
+        </div>
+
+        <div className="space-y-4 border-t border-slate-100 pt-6">
+          <label className="block text-sm font-bold text-slate-700 uppercase tracking-wider">Кому підходить</label>
+          {(editing.target_audience || []).map((item: string, i: number) => (
+            <div key={i} className="flex gap-2">
+              <Input value={item} onChange={(v) => {
+                const newList = [...editing.target_audience];
+                newList[i] = v;
+                setEditing({...editing, target_audience: newList});
+              }} />
+              <button onClick={() => {
+                const newList = editing.target_audience.filter((_: any, idx: number) => idx !== i);
+                setEditing({...editing, target_audience: newList});
+              }} className="p-2 text-red-500 hover:bg-red-50 rounded-lg"><Trash2 size={18} /></button>
+            </div>
+          ))}
+          <button onClick={() => setEditing({...editing, target_audience: [...(editing.target_audience || []), '']})} className="flex items-center gap-2 text-accent font-bold text-sm"><Plus size={16} /> Додати пункт</button>
+        </div>
+
+        <div className="space-y-4 border-t border-slate-100 pt-6">
+          <label className="block text-sm font-bold text-slate-700 uppercase tracking-wider">FAQ статті</label>
+          {(editing.faq || []).map((item: any, i: number) => (
+            <div key={i} className="p-4 bg-slate-50 rounded-2xl space-y-4 relative group">
+              <button onClick={() => {
+                const newList = editing.faq.filter((_: any, idx: number) => idx !== i);
+                setEditing({...editing, faq: newList});
+              }} className="absolute top-2 right-2 p-1 text-slate-400 hover:text-red-500"><X size={16} /></button>
+              <Input label="Питання" value={item.question} onChange={(v) => {
+                const newList = [...editing.faq];
+                newList[i] = {...newList[i], question: v};
+                setEditing({...editing, faq: newList});
+              }} />
+              <Textarea label="Відповідь" value={item.answer} onChange={(v) => {
+                const newList = [...editing.faq];
+                newList[i] = {...newList[i], answer: v};
+                setEditing({...editing, faq: newList});
+              }} />
+            </div>
+          ))}
+          <button onClick={() => setEditing({...editing, faq: [...(editing.faq || []), {question: '', answer: ''}]})} className="flex items-center gap-2 text-accent font-bold text-sm"><Plus size={16} /> Додати FAQ</button>
+        </div>
+
         <ImagePicker label="Обкладинка" value={editing.image} onChange={(v) => setEditing({...editing, image: v})} onUpload={onUpload} />
         
         <SaveButton onClick={() => handleSave(editing)} loading={saving} />
@@ -1587,7 +1651,20 @@ const ArticlesEditor = ({ onUpload, saving }: any) => {
       <div className="flex justify-between items-center">
         <h3 className="text-xl font-bold text-slate-900">Статті блогу</h3>
         <button 
-          onClick={() => setEditing({ title: '', slug: '', excerpt: '', content: '', image: '', category: 'Маркетинг', is_published: false })}
+          onClick={() => setEditing({ 
+            title: '', 
+            slug: '', 
+            excerpt: '', 
+            content: '', 
+            image: '', 
+            category: 'Маркетинг', 
+            is_published: false,
+            system_includes: [],
+            target_audience: [],
+            faq: [],
+            seo_title: '',
+            seo_description: ''
+          })}
           className="btn-primary flex items-center gap-2 px-4 py-2 text-sm"
         >
           <Plus size={16} /> Додати статтю

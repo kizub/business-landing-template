@@ -81,6 +81,10 @@ const BlogList = ({ content }: { content: any }) => {
         console.error('Failed to fetch articles', err);
       } finally {
         setLoading(false);
+        // Signal for prerender
+        setTimeout(() => {
+          window.dispatchEvent(new Event('render-event'));
+        }, 500);
       }
     };
     fetchArticles();
@@ -98,7 +102,7 @@ const BlogList = ({ content }: { content: any }) => {
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-8">
-          {articles.map((article) => (
+          {articles.length > 0 ? articles.map((article) => (
             <Link key={article.id} to={`/blog/${article.slug}`} className="group">
               <div className="bg-white rounded-2xl sm:rounded-[32px] overflow-hidden border border-slate-100 shadow-sm hover:shadow-xl transition-all duration-500 h-full flex flex-col">
                 <div className="aspect-video overflow-hidden">
@@ -113,7 +117,9 @@ const BlogList = ({ content }: { content: any }) => {
                   <div className="flex items-center gap-3 mb-4">
                     <span className="text-xs font-bold text-accent uppercase tracking-wider">{article.category}</span>
                     <span className="w-1 h-1 bg-slate-300 rounded-full"></span>
-                    <span className="text-xs text-slate-400">{new Date(article.published_at).toLocaleDateString('uk-UA')}</span>
+                    <span className="text-xs text-slate-400">
+                      {article.published_at ? new Date(article.published_at).toLocaleDateString('uk-UA') : 'Нещодавно'}
+                    </span>
                   </div>
                   <h3 className="text-xl font-bold text-slate-900 mb-4 group-hover:text-accent transition-colors">{article.title}</h3>
                   <p className="text-slate-500 text-sm line-clamp-3 mb-6">{article.excerpt}</p>
@@ -123,7 +129,11 @@ const BlogList = ({ content }: { content: any }) => {
                 </div>
               </div>
             </Link>
-          ))}
+          )) : (
+            <div className="col-span-full text-center py-20">
+              <p className="text-slate-400">Наразі немає опублікованих статей.</p>
+            </div>
+          )}
         </div>
       </div>
       <Footer content={{}} />
@@ -134,6 +144,7 @@ const BlogList = ({ content }: { content: any }) => {
 const ArticleView = ({ content }: { content: any }) => {
   const { slug } = useParams();
   const [article, setArticle] = useState<any>(null);
+  const [otherArticles, setOtherArticles] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -141,6 +152,29 @@ const ArticleView = ({ content }: { content: any }) => {
       try {
         const res = await getArticle(slug!);
         setArticle(res.data);
+        
+        // SEO
+        document.title = res.data.seo_title || res.data.title;
+        const metaDesc = document.querySelector('meta[name="description"]');
+        if (metaDesc) metaDesc.setAttribute('content', res.data.seo_description || res.data.excerpt || "Стаття Roman Dev");
+
+        // Canonical
+        let canonical = document.querySelector('link[rel="canonical"]');
+        if (!canonical) {
+          canonical = document.createElement('link');
+          canonical.setAttribute('rel', 'canonical');
+          document.head.appendChild(canonical);
+        }
+        canonical.setAttribute('href', window.location.origin + window.location.pathname);
+
+        // Fetch other articles for "Read also"
+        const allRes = await getArticles();
+        setOtherArticles(allRes.data.filter((a: any) => a.slug !== slug).slice(0, 3));
+
+        // Signal for prerender
+        setTimeout(() => {
+          window.dispatchEvent(new Event('render-event'));
+        }, 500);
       } catch (err) {
         console.error('Failed to fetch article', err);
       } finally {
@@ -148,16 +182,51 @@ const ArticleView = ({ content }: { content: any }) => {
       }
     };
     fetchArticle();
+    
+    return () => {
+      document.title = 'Roman Dev | Автономні системи залучення клієнтів';
+      // НЕ видаляти canonical при unmount для кращого SEO та prerender
+    };
   }, [slug]);
 
   if (loading) return <div className="min-h-screen flex items-center justify-center bg-white"><Loader2 className="animate-spin text-accent" size={48} /></div>;
   if (!article) return <div className="min-h-screen flex items-center justify-center bg-white">Стаття не знайдена</div>;
 
+  const jsonLd = {
+    "@context": "https://schema.org",
+    "@type": "Article",
+    "headline": article.title,
+    "description": article.excerpt,
+    "image": article.image,
+    "datePublished": article.published_at,
+    "author": {
+      "@type": "Person",
+      "name": "Roman Dev"
+    }
+  };
+
+  const faqJsonLd = (article.faq || []).length > 0 ? {
+    "@context": "https://schema.org",
+    "@type": "FAQPage",
+    "mainEntity": (article.faq || []).map((item: any) => ({
+      "@type": "Question",
+      "name": item.question || '',
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": item.answer || ''
+      }
+    }))
+  } : null;
+
   return (
     <div className="min-h-screen bg-white pt-24 sm:pt-32 pb-20">
+      {/* JSON-LD for SEO - rendered in body but will be captured by prerender */}
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
+      {faqJsonLd && <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(faqJsonLd) }} />}
+      
       <Navbar content={content} />
       <div className="container-custom">
-        <div className="max-w-3xl mx-auto">
+        <div className="max-w-4xl mx-auto">
           <Link to="/blog" className="inline-flex items-center gap-2 text-sm font-bold text-slate-400 hover:text-accent mb-8 sm:mb-10 transition-colors">
             <ArrowLeft size={16} /> Назад до блогу
           </Link>
@@ -165,7 +234,9 @@ const ArticleView = ({ content }: { content: any }) => {
           <div className="flex items-center gap-3 mb-6">
             <span className="text-xs sm:text-sm font-bold text-accent uppercase tracking-wider">{article.category}</span>
             <span className="w-1 h-1 bg-slate-300 rounded-full"></span>
-            <span className="text-xs sm:text-sm text-slate-400">{new Date(article.published_at).toLocaleDateString('uk-UA')}</span>
+            <span className="text-xs sm:text-sm text-slate-400">
+              {article.published_at ? new Date(article.published_at).toLocaleDateString('uk-UA') : 'Нещодавно'}
+            </span>
           </div>
 
           <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold text-slate-900 mb-8 leading-tight">{article.title}</h1>
@@ -179,10 +250,88 @@ const ArticleView = ({ content }: { content: any }) => {
             />
           </div>
 
-          <div className="prose prose-slate prose-sm sm:prose-lg max-w-none">
-            {article.content.split('\n').map((para: string, i: number) => (
-              <p key={i} className="text-slate-600 mb-6 leading-relaxed">{para}</p>
-            ))}
+          <div className="grid lg:grid-cols-[1fr_300px] gap-12">
+            <div>
+              <div className="prose prose-slate prose-sm sm:prose-lg max-w-none mb-16">
+                {(article.content || '').split('\n').map((para: string, i: number) => {
+                  if (para.startsWith('# ')) return <h1 key={i} className="text-3xl font-bold mb-6">{para.replace('# ', '')}</h1>;
+                  if (para.startsWith('## ')) return <h2 key={i} className="text-2xl font-bold mt-10 mb-6">{para.replace('## ', '')}</h2>;
+                  if (para.startsWith('### ')) return <h3 key={i} className="text-xl font-bold mt-8 mb-4">{para.replace('### ', '')}</h3>;
+                  if (para.startsWith('- ')) return <li key={i} className="ml-4 mb-2">{para.replace('- ', '')}</li>;
+                  return <p key={i} className="text-slate-600 mb-6 leading-relaxed">{para}</p>;
+                })}
+              </div>
+
+              {/* System Includes */}
+              {(article.system_includes || []).length > 0 && (
+                <div className="bg-slate-50 rounded-3xl p-8 mb-12 border border-slate-100">
+                  <h3 className="text-2xl font-bold text-slate-900 mb-6">Що входить у систему:</h3>
+                  <div className="grid sm:grid-cols-2 gap-4">
+                    {(article.system_includes || []).map((item: string, i: number) => (
+                      <div key={i} className="flex items-center gap-3">
+                        <CheckCircle2 className="text-accent shrink-0" size={20} />
+                        <span className="text-slate-700 font-medium">{item}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Target Audience */}
+              {(article.target_audience || []).length > 0 && (
+                <div className="bg-slate-900 text-white rounded-3xl p-8 mb-12">
+                  <h3 className="text-2xl font-bold mb-6">Кому підходить:</h3>
+                  <div className="flex flex-wrap gap-3">
+                    {(article.target_audience || []).map((item: string, i: number) => (
+                      <span key={i} className="px-4 py-2 bg-white/10 rounded-full text-sm font-bold">{item}</span>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* FAQ */}
+              {(article.faq || []).length > 0 && (
+                <div className="mb-16">
+                  <h3 className="text-2xl font-bold text-slate-900 mb-8">Часті питання (FAQ):</h3>
+                  <div className="space-y-4">
+                    {(article.faq || []).map((item: any, i: number) => (
+                      <div key={i} className="p-6 bg-white border border-slate-100 rounded-2xl shadow-sm">
+                        <h4 className="font-bold text-slate-900 mb-2">{item.question}</h4>
+                        <p className="text-slate-600 text-sm leading-relaxed">{item.answer}</p>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* CTA */}
+              <div className="bg-accent rounded-3xl p-8 sm:p-12 text-center text-white shadow-xl shadow-accent/20">
+                <h3 className="text-2xl sm:text-3xl font-bold mb-4">Готові впровадити автономну систему?</h3>
+                <p className="text-white/80 mb-8 max-w-xl mx-auto">Залиште заявку на безкоштовний відео-розбір вашого проекту.</p>
+                <Link to="/#contact" className="inline-flex items-center gap-2 bg-white text-accent px-8 py-4 rounded-full font-bold hover:bg-slate-50 transition-all">
+                  Обговорити проект <ArrowRight size={20} />
+                </Link>
+              </div>
+            </div>
+
+            {/* Sidebar / Read Also */}
+            <aside className="space-y-12">
+              <div>
+                <h3 className="text-lg font-bold text-slate-900 mb-6 flex items-center gap-2">
+                  <FileText size={20} className="text-accent" /> Читайте також
+                </h3>
+                <div className="space-y-6">
+                  {otherArticles.map((a) => (
+                    <Link key={a.id} to={`/blog/${a.slug}`} className="group block">
+                      <div className="aspect-video rounded-xl overflow-hidden mb-3">
+                        <img src={a.image} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" alt={a.title} />
+                      </div>
+                      <h4 className="font-bold text-slate-900 group-hover:text-accent transition-colors line-clamp-2">{a.title}</h4>
+                    </Link>
+                  ))}
+                </div>
+              </div>
+            </aside>
           </div>
         </div>
       </div>
@@ -1696,6 +1845,10 @@ const App = () => {
         console.error('Failed to fetch content', err);
       } finally {
         setLoading(false);
+        // Signal for prerender
+        setTimeout(() => {
+          window.dispatchEvent(new Event('render-event'));
+        }, 500);
       }
     };
     fetchData();
