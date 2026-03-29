@@ -4,6 +4,15 @@ import { authenticateToken } from "../middleware/auth.js";
 
 const router = express.Router();
 
+const safeParse = (json: string, fallback: any = {}) => {
+  try {
+    return json ? JSON.parse(json) : fallback;
+  } catch (e) {
+    console.error("JSON parse error:", e, "for JSON:", json);
+    return fallback;
+  }
+};
+
 // ПУБЛІЧНИЙ: Отримання всього контенту для сайту
 router.get("/", async (req, res) => {
   try {
@@ -17,7 +26,7 @@ router.get("/", async (req, res) => {
 
     const content: any = {};
     siteContent.forEach(item => {
-      content[item.section_key] = JSON.parse(item.content_json);
+      content[item.section_key] = safeParse(item.content_json);
     });
 
     res.json({
@@ -25,7 +34,7 @@ router.get("/", async (req, res) => {
       cases,
       pricing: pricing.map((p: any) => ({ 
         ...p, 
-        features: JSON.parse(p.features_json),
+        features: safeParse(p.features_json, []),
         is_featured: !!p.featured 
       })),
       process,
@@ -34,7 +43,8 @@ router.get("/", async (req, res) => {
       faq
     });
   } catch (error) {
-    res.status(500).json({ message: "Error fetching content" });
+    console.error("Error in GET /api/content:", error);
+    res.status(500).json({ message: "Error fetching content", details: error instanceof Error ? error.message : String(error) });
   }
 });
 
@@ -48,7 +58,7 @@ router.get("/:section", async (req, res) => {
       return res.status(404).json({ message: "Section not found" });
     }
 
-    res.json(JSON.parse(item.content_json));
+    res.json(safeParse(item.content_json));
   } catch (error) {
     res.status(500).json({ message: "Error fetching section" });
   }
