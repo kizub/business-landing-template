@@ -1108,51 +1108,46 @@ const PricingModal = ({ isOpen, onClose, plan, contactContent }: { isOpen: boole
 
   if (!isOpen || !plan) return null;
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!formData.name || !formData.contact || formData.comment.length < 2) return;
     
-    setStatus('loading');
-    try {
-      let recaptchaToken = null;
-      const siteKey = import.meta.env.VITE_RECAPTCHA_SITE_KEY;
-      if ((window as any).grecaptcha) {
-        recaptchaToken = await Promise.race([
-          new Promise<string>((resolve) => {
-            (window as any).grecaptcha.ready(() => {
-              (window as any).grecaptcha.execute(siteKey, { action: 'submit' }).then(resolve);
-            });
-          }),
-          new Promise<null>((resolve) => setTimeout(() => resolve(null), 3000)) // 3s timeout for reCAPTCHA
-        ]);
-      }
+    // Optimistic success - show success immediately
+    const dataToSubmit = { ...formData };
+    setStatus('success');
+    setFormData({ name: '', contact: '', comment: '' });
 
-      const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 15000); // 15s timeout for fetch
+    // Background submission
+    (async () => {
+      try {
+        let recaptchaToken = null;
+        const siteKey = import.meta.env.VITE_RECAPTCHA_SITE_KEY;
+        if ((window as any).grecaptcha) {
+          recaptchaToken = await Promise.race([
+            new Promise<string>((resolve) => {
+              (window as any).grecaptcha.ready(() => {
+                (window as any).grecaptcha.execute(siteKey, { action: 'submit' }).then(resolve);
+              });
+            }),
+            new Promise<null>((resolve) => setTimeout(() => resolve(null), 3000))
+          ]);
+        }
 
-      const response = await fetch('/api/contact', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        signal: controller.signal,
-        body: JSON.stringify({
-          ...formData,
-          message: formData.comment,
-          plan: plan.name,
-          source: 'Pricing Modal',
-          recaptchaToken
-        })
-      });
-      clearTimeout(timeoutId);
-      
-      if (response.ok) {
-        setStatus('success');
-        setFormData({ name: '', contact: '', comment: '' });
-      } else {
-        setStatus('error');
+        await fetch('/api/contact', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            ...dataToSubmit,
+            message: dataToSubmit.comment,
+            plan: plan.name,
+            source: 'Pricing Modal',
+            recaptchaToken
+          })
+        });
+      } catch (error) {
+        console.error("Background submission error:", error);
       }
-    } catch (err) {
-      setStatus('error');
-    }
+    })();
   };
 
   const modalContent = {
@@ -1390,52 +1385,45 @@ const Contacts = ({ content }: { content: any }) => {
   const [status, setStatus] = useState<'idle' | 'loading' | 'success' | 'error'>('idle');
   const [responseMsg, setResponseMsg] = useState('');
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!formData.name || !formData.contact || formData.message.length < 2) return;
     
-    setStatus('loading');
-    try {
-      let recaptchaToken = null;
-      const siteKey = import.meta.env.VITE_RECAPTCHA_SITE_KEY;
-      if ((window as any).grecaptcha) {
-        recaptchaToken = await Promise.race([
-          new Promise<string>((resolve) => {
-            (window as any).grecaptcha.ready(() => {
-              (window as any).grecaptcha.execute(siteKey, { action: 'submit' }).then(resolve);
-            });
-          }),
-          new Promise<null>((resolve) => setTimeout(() => resolve(null), 3000)) // 3s timeout for reCAPTCHA
-        ]);
-      }
+    // Optimistic success - show success immediately
+    const dataToSubmit = { ...formData };
+    setStatus('success');
+    setResponseMsg(content?.successTitle || "Заявка отримана!");
+    setFormData({ name: '', contact: '', message: '' });
 
-      const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 15000); // 15s timeout for fetch
+    // Background submission
+    (async () => {
+      try {
+        let recaptchaToken = null;
+        const siteKey = import.meta.env.VITE_RECAPTCHA_SITE_KEY;
+        if ((window as any).grecaptcha) {
+          recaptchaToken = await Promise.race([
+            new Promise<string>((resolve) => {
+              (window as any).grecaptcha.ready(() => {
+                (window as any).grecaptcha.execute(siteKey, { action: 'submit' }).then(resolve);
+              });
+            }),
+            new Promise<null>((resolve) => setTimeout(() => resolve(null), 3000))
+          ]);
+        }
 
-      const response = await fetch('/api/contact', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        signal: controller.signal,
-        body: JSON.stringify({
-          ...formData,
-          source: 'Main Contact Form',
-          recaptchaToken
-        })
-      });
-      clearTimeout(timeoutId);
-      const result = await response.json();
-      if (response.ok) {
-        setStatus('success');
-        setResponseMsg(result.message);
-        setFormData({ name: '', contact: '', message: '' });
-      } else {
-        setStatus('error');
-        setResponseMsg(result.message || 'Помилка при відправці');
+        await fetch('/api/contact', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            ...dataToSubmit,
+            source: 'Main Contact Form',
+            recaptchaToken
+          })
+        });
+      } catch (error) {
+        console.error("Background submission error:", error);
       }
-    } catch (err) {
-      setStatus('error');
-      setResponseMsg('Помилка мережі. Спробуйте пізніше.');
-    }
+    })();
   };
 
   return (
