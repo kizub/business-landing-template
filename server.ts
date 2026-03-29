@@ -7,6 +7,54 @@ import cors from "cors";
 import dotenv from "dotenv";
 import fs from "fs";
 
+// SEO Helpers
+const safeEscape = (str: any): string => {
+  if (typeof str !== 'string') return "";
+  return str
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
+};
+
+const injectSeo = (html: string, { title, description, canonical, extraHead }: any) => {
+  let res = html;
+  
+  if (title) {
+    const titleTag = `<title>${title}</title>`;
+    if (/<title>.*?<\/title>/i.test(res)) {
+      res = res.replace(/<title>.*?<\/title>/i, titleTag);
+    } else {
+      res = res.replace('</head>', `${titleTag}</head>`);
+    }
+  }
+
+  if (description) {
+    const descTag = `<meta name="description" content="${description}">`;
+    if (/<meta\s+name="description".*?>/i.test(res)) {
+      res = res.replace(/<meta\s+name="description".*?>/i, descTag);
+    } else {
+      res = res.replace('</head>', `${descTag}</head>`);
+    }
+  }
+
+  if (canonical) {
+    const canonTag = `<link rel="canonical" href="${canonical}">`;
+    if (/<link\s+rel="canonical".*?>/i.test(res)) {
+      res = res.replace(/<link\s+rel="canonical".*?>/i, canonTag);
+    } else {
+      res = res.replace('</head>', `${canonTag}</head>`);
+    }
+  }
+
+  if (extraHead) {
+    res = res.replace('</head>', `${extraHead}</head>`);
+  }
+
+  return res;
+};
+
 // Routes
 import authRoutes from "./server/routes/auth.js";
 import contentRoutes from "./server/routes/content.js";
@@ -19,6 +67,7 @@ dotenv.config();
 
 async function startServer() {
   const app = express();
+  app.set('trust proxy', 1);
   const PORT = process.env.PORT || 3000;
 
   // Init Database
@@ -55,31 +104,37 @@ async function startServer() {
   // Sitemap and Robots
   app.get("/robots.txt", (req, res) => {
     res.type("text/plain");
-    res.send(`User-agent: *\nAllow: /\nSitemap: ${req.protocol}://${req.get('host')}/sitemap.xml`);
+    res.send(`User-agent: *\nAllow: /\nSitemap: https://www.romanbuiar.com/sitemap.xml`);
   });
 
   app.get("/sitemap.xml", async (req, res) => {
     try {
       const articles = await db.all("SELECT slug, updated_at FROM articles WHERE is_published = 1");
-      const baseUrl = `${req.protocol}://${req.get('host')}`;
+      const baseUrl = "https://www.romanbuiar.com";
       
       let sitemap = `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n`;
       
       // Static pages
-      const staticPages = ['', '/blog', '/admin'];
+      const staticPages = [
+        { url: '/', priority: '1.0', changefreq: 'daily' },
+        { url: '/blog', priority: '0.8', changefreq: 'weekly' }
+      ];
+
       staticPages.forEach(page => {
-        sitemap += `  <url>\n    <loc>${baseUrl}${page}</loc>\n    <changefreq>weekly</changefreq>\n    <priority>${page === '' ? '1.0' : '0.8'}</priority>\n  </url>\n`;
+        sitemap += `  <url>\n    <loc>${baseUrl}${page.url}</loc>\n    <changefreq>${page.changefreq}</changefreq>\n    <priority>${page.priority}</priority>\n  </url>\n`;
       });
 
       // Articles
       articles.forEach(art => {
-        sitemap += `  <url>\n    <loc>${baseUrl}/blog/${art.slug}</loc>\n    <lastmod>${new Date(art.updated_at).toISOString().split('T')[0]}</lastmod>\n    <changefreq>monthly</changefreq>\n    <priority>0.7</priority>\n  </url>\n`;
+        const lastmod = art.updated_at ? new Date(art.updated_at).toISOString().split('T')[0] : new Date().toISOString().split('T')[0];
+        sitemap += `  <url>\n    <loc>${baseUrl}/blog/${art.slug}</loc>\n    <lastmod>${lastmod}</lastmod>\n    <changefreq>monthly</changefreq>\n    <priority>0.7</priority>\n  </url>\n`;
       });
 
       sitemap += `</urlset>`;
       res.type("application/xml");
       res.send(sitemap);
     } catch (err) {
+      console.error("Sitemap error:", err);
       res.status(500).send("Error generating sitemap");
     }
   });
@@ -103,25 +158,15 @@ async function startServer() {
         if (fs.existsSync(indexPath)) {
           let html = fs.readFileSync(indexPath, "utf-8");
           
-          const title = article.seo_title || `${article.title} | Roman Dev Blog`;
-          const description = article.seo_description || article.excerpt || "Стаття Roman Dev";
-          const image = article.image || '';
+          const title = safeEscape(article.seo_title || `${article.title} | Roman Dev Blog`);
+          const description = safeEscape(article.seo_description || article.excerpt || "Стаття Roman Dev");
+          const image = safeEscape(article.image || '');
           
           // Parse JSON fields safely
           let faq = [];
           try {
             faq = typeof article.faq === 'string' ? JSON.parse(article.faq) : (article.faq || []);
           } catch (e) { faq = []; }
-
-          let systemIncludes = [];
-          try {
-            systemIncludes = typeof article.system_includes === 'string' ? JSON.parse(article.system_includes) : (article.system_includes || []);
-          } catch (e) { systemIncludes = []; }
-
-          let targetAudience = [];
-          try {
-            targetAudience = typeof article.target_audience === 'string' ? JSON.parse(article.target_audience) : (article.target_audience || []);
-          } catch (e) { targetAudience = []; }
 
           // JSON-LD for Article
           const jsonLd = {
@@ -137,7 +182,7 @@ async function startServer() {
             "datePublished": article.published_at || article.created_at,
             "mainEntityOfPage": {
               "@type": "WebPage",
-              "@id": `https://roman-dev.com/blog/${article.slug}`
+              "@id": `https://www.romanbuiar.com/blog/${article.slug}`
             }
           };
 
@@ -158,52 +203,21 @@ async function startServer() {
             };
           }
 
-          const seoTags = `
-            <title>${title}</title>
-            <meta name="description" content="${description}">
+          const extraHead = `
             <meta property="og:title" content="${title}">
             <meta property="og:description" content="${description}">
             <meta property="og:image" content="${image}">
             <meta property="og:type" content="article">
-            <link rel="canonical" href="https://roman-dev.com/blog/${article.slug}">
             <script type="application/ld+json">${JSON.stringify(jsonLd)}</script>
             ${faqJsonLd ? `<script type="application/ld+json">${JSON.stringify(faqJsonLd)}</script>` : ''}
           `;
 
-          const articleContent = `
-            <article style="display:none">
-              <h1>${article.title}</h1>
-              <div class="excerpt">${article.excerpt}</div>
-              <div class="content">${article.content}</div>
-              ${faq.length > 0 ? `
-                <section class="faq">
-                  <h2>FAQ</h2>
-                  ${faq.map((f: any) => `<div><h3>${f.question}</h3><p>${f.answer}</p></div>`).join('')}
-                </section>
-              ` : ''}
-              ${systemIncludes.length > 0 ? `
-                <section class="includes">
-                  <h2>Що входить у систему:</h2>
-                  <ul>
-                    ${systemIncludes.map((s: any) => `<li>${s}</li>`).join('')}
-                  </ul>
-                </section>
-              ` : ''}
-              ${targetAudience.length > 0 ? `
-                <section class="audience">
-                  <h2>Кому підходить:</h2>
-                  <ul>
-                    ${targetAudience.map((t: any) => `<li>${t}</li>`).join('')}
-                  </ul>
-                </section>
-              ` : ''}
-            </article>
-          `;
-          
-          // Inject into head
-          html = html.replace('</head>', `${seoTags}</head>`);
-          // Inject into root
-          html = html.replace('<div id="root"></div>', `<div id="root">${articleContent}</div>`);
+          html = injectSeo(html, {
+            title,
+            description,
+            canonical: `https://www.romanbuiar.com/blog/${article.slug}`,
+            extraHead
+          });
           
           return res.send(html);
         }
@@ -221,12 +235,11 @@ async function startServer() {
       const indexPath = path.join(distPath, "index.html");
       if (fs.existsSync(indexPath)) {
         let html = fs.readFileSync(indexPath, "utf-8");
-        const seoTags = `
-          <title>Блог | Roman Dev - Автоматизація та SEO</title>
-          <meta name="description" content="Корисні статті про автоматизацію бізнесу, створення сайтів та SEO-стратегії від Roman Dev.">
-          <link rel="canonical" href="https://roman-dev.com/blog">
-        `;
-        html = html.replace('</head>', `${seoTags}</head>`);
+        html = injectSeo(html, {
+          title: "Блог | Roman Dev - Автоматизація та SEO",
+          description: "Корисні статті про автоматизацію бізнесу, створення сайтів та SEO-стратегії від Roman Dev.",
+          canonical: "https://www.romanbuiar.com/blog"
+        });
         return res.send(html);
       }
     } catch (err) {
@@ -247,15 +260,19 @@ async function startServer() {
       if (fs.existsSync(indexPath)) {
         let html = fs.readFileSync(indexPath, "utf-8");
         if (seoData) {
-          const seoTags = `
-            <title>${seoData.title}</title>
-            <meta name="description" content="${seoData.description}">
-            <meta property="og:title" content="${seoData.ogTitle || seoData.title}">
-            <meta property="og:description" content="${seoData.ogDescription || seoData.description}">
-            <meta property="og:image" content="${seoData.ogImage || ''}">
-            <link rel="canonical" href="https://roman-dev.com/">
+          const title = safeEscape(seoData.title);
+          const description = safeEscape(seoData.description);
+          const extraHead = `
+            <meta property="og:title" content="${safeEscape(seoData.ogTitle || seoData.title)}">
+            <meta property="og:description" content="${safeEscape(seoData.ogDescription || seoData.description)}">
+            <meta property="og:image" content="${safeEscape(seoData.ogImage || '')}">
           `;
-          html = html.replace('</head>', `${seoTags}</head>`);
+          html = injectSeo(html, {
+            title,
+            description,
+            canonical: "https://www.romanbuiar.com/",
+            extraHead
+          });
         }
         return res.send(html);
       }
