@@ -15,9 +15,20 @@ export const getMe = () => api.get('/admin/me');
 export const updateSection = (section: string, content: any) => api.put(`/content/${section}`, content);
 export const updateCase = (id: number, data: any) => api.put(`/content/cases/${id}`, data);
 export const updatePricing = (id: number, data: any) => api.put(`/content/pricing/${id}`, data);
+export const createPricing = (data: any) => api.post('/content/pricing', data);
+export const deletePricing = (id: number) => api.delete(`/content/pricing/${id}`);
+
 export const updateProcess = (id: number, data: any) => api.put(`/content/process/${id}`, data);
+export const createProcess = (data: any) => api.post('/content/process', data);
+export const deleteProcess = (id: number) => api.delete(`/content/process/${id}`);
+
 export const updateProblem = (id: number, data: any) => api.put(`/content/problem-cards/${id}`, data);
+export const createProblem = (data: any) => api.post('/content/problem-cards', data);
+export const deleteProblem = (id: number) => api.delete(`/content/problem-cards/${id}`);
+
 export const updateBenefit = (id: number, data: any) => api.put(`/content/benefit-cards/${id}`, data);
+export const createBenefit = (data: any) => api.post('/content/benefit-cards', data);
+export const deleteBenefit = (id: number) => api.delete(`/content/benefit-cards/${id}`);
 export const updateFaq = (id: number, data: any) => api.put(`/content/faq/${id}`, data);
 
 export const createCase = (data: any) => api.post('/content/cases', data);

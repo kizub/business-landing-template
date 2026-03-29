@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { logout, getContent, updateSection, updateCase, createCase, deleteCase, updatePricing, updateProcess, updateProblem, updateBenefit, updateFaq, createFaq, deleteFaq, uploadFile, getLeads, updateLeadStatus, deleteLead, getLeadStats, getStatusDistribution, getAdminArticles, createArticle, updateArticle, deleteArticle } from '../services/api';
+import { logout, getContent, updateSection, updateCase, createCase, deleteCase, updatePricing, createPricing, deletePricing, updateProcess, createProcess, deleteProcess, updateProblem, createProblem, deleteProblem, updateBenefit, createBenefit, deleteBenefit, updateFaq, createFaq, deleteFaq, uploadFile, getLeads, updateLeadStatus, deleteLead, getLeadStats, getStatusDistribution, getAdminArticles, createArticle, updateArticle, deleteArticle } from '../services/api';
 import { 
   Layout, 
   LogOut, 
@@ -147,6 +147,10 @@ const Dashboard: React.FC<DashboardProps> = ({ onLogout }) => {
     try {
       if (type === 'cases') await createCase(entityData);
       else if (type === 'faq') await createFaq(entityData);
+      else if (type === 'pricing') await createPricing(entityData);
+      else if (type === 'process') await createProcess(entityData);
+      else if (type === 'problems') await createProblem(entityData);
+      else if (type === 'benefits') await createBenefit(entityData);
       showMessage('Створено успішно!');
       fetchData();
     } catch (err) {
@@ -162,6 +166,10 @@ const Dashboard: React.FC<DashboardProps> = ({ onLogout }) => {
     try {
       if (type === 'cases') await deleteCase(id);
       else if (type === 'faq') await deleteFaq(id);
+      else if (type === 'pricing') await deletePricing(id);
+      else if (type === 'process') await deleteProcess(id);
+      else if (type === 'problems') await deleteProblem(id);
+      else if (type === 'benefits') await deleteBenefit(id);
       showMessage('Видалено успішно!');
       fetchData();
     } catch (err) {
@@ -356,6 +364,8 @@ const Dashboard: React.FC<DashboardProps> = ({ onLogout }) => {
                 header={data.content.pricing_header}
                 onSaveHeader={(content) => handleSaveSection('pricing_header', content)}
                 onSave={(id, data) => handleSaveEntity('pricing', id, data)} 
+                onCreate={(data) => handleCreateEntity('pricing', data)}
+                onDelete={(id) => handleDeleteEntity('pricing', id)}
                 saving={saving} 
               />
             )}
@@ -376,6 +386,8 @@ const Dashboard: React.FC<DashboardProps> = ({ onLogout }) => {
                 header={data.content.process_header}
                 onSaveHeader={(content) => handleSaveSection('process_header', content)}
                 onSave={(id, data) => handleSaveEntity('process', id, data)} 
+                onCreate={(data) => handleCreateEntity('process', data)}
+                onDelete={(id) => handleDeleteEntity('process', id)}
                 saving={saving} 
               />
             )}
@@ -385,6 +397,8 @@ const Dashboard: React.FC<DashboardProps> = ({ onLogout }) => {
                 header={data.content.problems_header}
                 onSaveHeader={(content) => handleSaveSection('problems_header', content)}
                 onSave={(id, data) => handleSaveEntity('problems', id, data)} 
+                onCreate={(data) => handleCreateEntity('problems', data)}
+                onDelete={(id) => handleDeleteEntity('problems', id)}
                 saving={saving} 
               />
             )}
@@ -394,6 +408,8 @@ const Dashboard: React.FC<DashboardProps> = ({ onLogout }) => {
                 header={data.content.benefits_header}
                 onSaveHeader={(content) => handleSaveSection('benefits_header', content)}
                 onSave={(id, data) => handleSaveEntity('benefits', id, data)} 
+                onCreate={(data) => handleCreateEntity('benefits', data)}
+                onDelete={(id) => handleDeleteEntity('benefits', id)}
                 saving={saving} 
               />
             )}
@@ -915,7 +931,20 @@ const CaseItemEditor = ({ item, onSave, onDelete, onUpload, saving, isNew }: any
   );
 };
 
-const PricingEditor = ({ items, header, onSaveHeader, onSave, saving }: any) => {
+const PricingEditor = ({ items, header, onSaveHeader, onSave, onCreate, onDelete, saving }: any) => {
+  const [showAdd, setShowAdd] = useState(false);
+  const emptyPlan = {
+    name: '',
+    price: '',
+    label: '',
+    featured: false,
+    features: [''],
+    result_text: '',
+    modal_title: '',
+    modal_subtitle: '',
+    modal_tip: ''
+  };
+
   return (
     <div className="space-y-12">
       <SectionHeaderEditor 
@@ -930,17 +959,60 @@ const PricingEditor = ({ items, header, onSaveHeader, onSave, saving }: any) => 
           { key: 'resultLabel', label: 'Лейбл результату' },
         ]}
       />
-      {items.map((item: any, i: number) => (
-        <PricingItemEditor key={i} item={item} onSave={onSave} saving={saving} />
-      ))}
+      
+      <div className="flex justify-between items-center">
+        <h3 className="text-xl font-bold text-slate-900">Список тарифів</h3>
+        <button 
+          onClick={() => setShowAdd(!showAdd)}
+          className="flex items-center gap-2 px-4 py-2 bg-accent text-white rounded-xl text-sm font-bold hover:bg-accent/90 transition-all"
+        >
+          {showAdd ? <X size={18} /> : <Plus size={18} />}
+          {showAdd ? 'Скасувати' : 'Додати тариф'}
+        </button>
+      </div>
+
+      {showAdd && (
+        <div className="p-8 border-2 border-dashed border-accent/30 rounded-[32px] bg-accent/5">
+          <h4 className="text-lg font-bold text-slate-900 mb-6">Новий тариф</h4>
+          <PricingItemEditor 
+            item={emptyPlan} 
+            onSave={(_, data) => {
+              onCreate(data);
+              setShowAdd(false);
+            }} 
+            saving={saving} 
+            isNew
+          />
+        </div>
+      )}
+
+      <div className="space-y-8">
+        {items.map((item: any, i: number) => (
+          <PricingItemEditor 
+            key={i} 
+            item={item} 
+            onSave={onSave} 
+            onDelete={() => onDelete(item.id)}
+            saving={saving} 
+          />
+        ))}
+      </div>
     </div>
   );
 };
 
-const PricingItemEditor = ({ item, onSave, saving }: any) => {
+const PricingItemEditor = ({ item, onSave, onDelete, saving, isNew }: any) => {
   const [form, setForm] = useState(item);
   return (
-    <div className="p-6 bg-slate-50 rounded-2xl space-y-4">
+    <div className="p-6 bg-slate-50 rounded-2xl space-y-4 relative group">
+      {!isNew && (
+        <button 
+          onClick={onDelete}
+          className="absolute top-4 right-4 p-2 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-all opacity-0 group-hover:opacity-100"
+        >
+          <Trash2 size={18} />
+        </button>
+      )}
       <div className="grid grid-cols-2 gap-4">
         <Input label="Назва" value={form.name} onChange={(v) => setForm({...form, name: v})} />
         <Input label="Ціна" value={form.price} onChange={(v) => setForm({...form, price: v})} />
@@ -968,7 +1040,10 @@ const PricingItemEditor = ({ item, onSave, saving }: any) => {
   );
 };
 
-const ProcessEditor = ({ items, header, onSaveHeader, onSave, saving }: any) => {
+const ProcessEditor = ({ items, header, onSaveHeader, onSave, onCreate, onDelete, saving }: any) => {
+  const [showAdd, setShowAdd] = useState(false);
+  const emptyStep = { step_number: '', title: '', description: '' };
+
   return (
     <div className="space-y-12">
       <SectionHeaderEditor 
@@ -982,17 +1057,60 @@ const ProcessEditor = ({ items, header, onSaveHeader, onSave, saving }: any) => 
           { key: 'stepLabel', label: 'Лейбл "Крок"' },
         ]}
       />
-      {items.map((item: any, i: number) => (
-        <ProcessItemEditor key={i} item={item} onSave={onSave} saving={saving} />
-      ))}
+
+      <div className="flex justify-between items-center">
+        <h3 className="text-xl font-bold text-slate-900">Список кроків</h3>
+        <button 
+          onClick={() => setShowAdd(!showAdd)}
+          className="flex items-center gap-2 px-4 py-2 bg-accent text-white rounded-xl text-sm font-bold hover:bg-accent/90 transition-all"
+        >
+          {showAdd ? <X size={18} /> : <Plus size={18} />}
+          {showAdd ? 'Скасувати' : 'Додати крок'}
+        </button>
+      </div>
+
+      {showAdd && (
+        <div className="p-8 border-2 border-dashed border-accent/30 rounded-[32px] bg-accent/5">
+          <h4 className="text-lg font-bold text-slate-900 mb-6">Новий крок</h4>
+          <ProcessItemEditor 
+            item={emptyStep} 
+            onSave={(_, data) => {
+              onCreate(data);
+              setShowAdd(false);
+            }} 
+            saving={saving} 
+            isNew
+          />
+        </div>
+      )}
+
+      <div className="space-y-8">
+        {items.map((item: any, i: number) => (
+          <ProcessItemEditor 
+            key={i} 
+            item={item} 
+            onSave={onSave} 
+            onDelete={() => onDelete(item.id)}
+            saving={saving} 
+          />
+        ))}
+      </div>
     </div>
   );
 };
 
-const ProcessItemEditor = ({ item, onSave, saving }: any) => {
+const ProcessItemEditor = ({ item, onSave, onDelete, saving, isNew }: any) => {
   const [form, setForm] = useState(item);
   return (
-    <div className="p-6 bg-slate-50 rounded-2xl space-y-4">
+    <div className="p-6 bg-slate-50 rounded-2xl space-y-4 relative group">
+      {!isNew && (
+        <button 
+          onClick={onDelete}
+          className="absolute top-4 right-4 p-2 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-all opacity-0 group-hover:opacity-100"
+        >
+          <Trash2 size={18} />
+        </button>
+      )}
       <div className="grid grid-cols-2 gap-4">
         <Input label="Номер" value={form.step_number} onChange={(v) => setForm({...form, step_number: v})} />
         <Input label="Заголовок" value={form.title} onChange={(v) => setForm({...form, title: v})} />
@@ -1003,7 +1121,10 @@ const ProcessItemEditor = ({ item, onSave, saving }: any) => {
   );
 };
 
-const ProblemsEditor = ({ items, header, onSaveHeader, onSave, saving }: any) => {
+const ProblemsEditor = ({ items, header, onSaveHeader, onSave, onCreate, onDelete, saving }: any) => {
+  const [showAdd, setShowAdd] = useState(false);
+  const emptyProblem = { title: '', description: '' };
+
   return (
     <div className="space-y-12">
       <SectionHeaderEditor 
@@ -1016,17 +1137,60 @@ const ProblemsEditor = ({ items, header, onSaveHeader, onSave, saving }: any) =>
           { key: 'subtitle', label: 'Підзаголовок', type: 'textarea' },
         ]}
       />
-      {items.map((item: any, i: number) => (
-        <ProblemItemEditor key={i} item={item} onSave={onSave} saving={saving} />
-      ))}
+
+      <div className="flex justify-between items-center">
+        <h3 className="text-xl font-bold text-slate-900">Список проблем</h3>
+        <button 
+          onClick={() => setShowAdd(!showAdd)}
+          className="flex items-center gap-2 px-4 py-2 bg-accent text-white rounded-xl text-sm font-bold hover:bg-accent/90 transition-all"
+        >
+          {showAdd ? <X size={18} /> : <Plus size={18} />}
+          {showAdd ? 'Скасувати' : 'Додати проблему'}
+        </button>
+      </div>
+
+      {showAdd && (
+        <div className="p-8 border-2 border-dashed border-accent/30 rounded-[32px] bg-accent/5">
+          <h4 className="text-lg font-bold text-slate-900 mb-6">Нова проблема</h4>
+          <ProblemItemEditor 
+            item={emptyProblem} 
+            onSave={(_, data) => {
+              onCreate(data);
+              setShowAdd(false);
+            }} 
+            saving={saving} 
+            isNew
+          />
+        </div>
+      )}
+
+      <div className="space-y-8">
+        {items.map((item: any, i: number) => (
+          <ProblemItemEditor 
+            key={i} 
+            item={item} 
+            onSave={onSave} 
+            onDelete={() => onDelete(item.id)}
+            saving={saving} 
+          />
+        ))}
+      </div>
     </div>
   );
 };
 
-const ProblemItemEditor = ({ item, onSave, saving }: any) => {
+const ProblemItemEditor = ({ item, onSave, onDelete, saving, isNew }: any) => {
   const [form, setForm] = useState(item);
   return (
-    <div className="p-6 bg-slate-50 rounded-2xl space-y-4">
+    <div className="p-6 bg-slate-50 rounded-2xl space-y-4 relative group">
+      {!isNew && (
+        <button 
+          onClick={onDelete}
+          className="absolute top-4 right-4 p-2 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-all opacity-0 group-hover:opacity-100"
+        >
+          <Trash2 size={18} />
+        </button>
+      )}
       <Input label="Заголовок" value={form.title} onChange={(v) => setForm({...form, title: v})} />
       <Textarea label="Опис" value={form.description} onChange={(v) => setForm({...form, description: v})} />
       <SaveButton onClick={() => onSave(form.id, form)} loading={saving} />
@@ -1034,7 +1198,10 @@ const ProblemItemEditor = ({ item, onSave, saving }: any) => {
   );
 };
 
-const BenefitsEditor = ({ items, header, onSaveHeader, onSave, saving }: any) => {
+const BenefitsEditor = ({ items, header, onSaveHeader, onSave, onCreate, onDelete, saving }: any) => {
+  const [showAdd, setShowAdd] = useState(false);
+  const emptyBenefit = { icon_name: '', title: '', result: '' };
+
   return (
     <div className="space-y-12">
       <SectionHeaderEditor 
@@ -1047,17 +1214,60 @@ const BenefitsEditor = ({ items, header, onSaveHeader, onSave, saving }: any) =>
           { key: 'subtitle', label: 'Підзаголовок', type: 'textarea' },
         ]}
       />
-      {items.map((item: any, i: number) => (
-        <BenefitItemEditor key={i} item={item} onSave={onSave} saving={saving} />
-      ))}
+
+      <div className="flex justify-between items-center">
+        <h3 className="text-xl font-bold text-slate-900">Список переваг</h3>
+        <button 
+          onClick={() => setShowAdd(!showAdd)}
+          className="flex items-center gap-2 px-4 py-2 bg-accent text-white rounded-xl text-sm font-bold hover:bg-accent/90 transition-all"
+        >
+          {showAdd ? <X size={18} /> : <Plus size={18} />}
+          {showAdd ? 'Скасувати' : 'Додати перевагу'}
+        </button>
+      </div>
+
+      {showAdd && (
+        <div className="p-8 border-2 border-dashed border-accent/30 rounded-[32px] bg-accent/5">
+          <h4 className="text-lg font-bold text-slate-900 mb-6">Нова перевага</h4>
+          <BenefitItemEditor 
+            item={emptyBenefit} 
+            onSave={(_, data) => {
+              onCreate(data);
+              setShowAdd(false);
+            }} 
+            saving={saving} 
+            isNew
+          />
+        </div>
+      )}
+
+      <div className="space-y-8">
+        {items.map((item: any, i: number) => (
+          <BenefitItemEditor 
+            key={i} 
+            item={item} 
+            onSave={onSave} 
+            onDelete={() => onDelete(item.id)}
+            saving={saving} 
+          />
+        ))}
+      </div>
     </div>
   );
 };
 
-const BenefitItemEditor = ({ item, onSave, saving }: any) => {
+const BenefitItemEditor = ({ item, onSave, onDelete, saving, isNew }: any) => {
   const [form, setForm] = useState(item);
   return (
-    <div className="p-6 bg-slate-50 rounded-2xl space-y-4">
+    <div className="p-6 bg-slate-50 rounded-2xl space-y-4 relative group">
+      {!isNew && (
+        <button 
+          onClick={onDelete}
+          className="absolute top-4 right-4 p-2 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-all opacity-0 group-hover:opacity-100"
+        >
+          <Trash2 size={18} />
+        </button>
+      )}
       <Input label="Іконка (Lucide name)" value={form.icon_name} onChange={(v) => setForm({...form, icon_name: v})} />
       <Input label="Заголовок" value={form.title} onChange={(v) => setForm({...form, title: v})} />
       <Textarea label="Результат" value={form.result} onChange={(v) => setForm({...form, result: v})} />

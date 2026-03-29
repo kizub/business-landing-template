@@ -23,7 +23,11 @@ router.get("/", async (req, res) => {
     res.json({
       content,
       cases,
-      pricing: pricing.map((p: any) => ({ ...p, features: JSON.parse(p.features_json) })),
+      pricing: pricing.map((p: any) => ({ 
+        ...p, 
+        features: JSON.parse(p.features_json),
+        is_featured: !!p.featured 
+      })),
       process,
       problems,
       benefits,
@@ -105,6 +109,31 @@ router.put("/pricing/:id", authenticateToken, async (req, res) => {
   }
 });
 
+// Додати новий тариф
+router.post("/pricing", authenticateToken, async (req, res) => {
+  const { name, price, label, featured, features, result_text } = req.body;
+  try {
+    const result = await db.run(`
+      INSERT INTO pricing_plans (name, price, label, featured, features_json, result_text)
+      VALUES (?, ?, ?, ?, ?, ?)
+    `, [name, price, label, featured ? 1 : 0, JSON.stringify(features), result_text]);
+    res.json({ id: result.lastInsertRowid, message: "Pricing plan created successfully" });
+  } catch (error) {
+    res.status(500).json({ message: "Error creating pricing plan" });
+  }
+});
+
+// Видалити тариф
+router.delete("/pricing/:id", authenticateToken, async (req, res) => {
+  const { id } = req.params;
+  try {
+    await db.run("DELETE FROM pricing_plans WHERE id = ?", [id]);
+    res.json({ message: "Pricing plan deleted successfully" });
+  } catch (error) {
+    res.status(500).json({ message: "Error deleting pricing plan" });
+  }
+});
+
 // ЗАХИЩЕНИЙ: Оновлення кроку процесу
 router.put("/process/:id", authenticateToken, async (req, res) => {
   const { id } = req.params;
@@ -120,6 +149,31 @@ router.put("/process/:id", authenticateToken, async (req, res) => {
     res.json({ message: "Process step updated successfully" });
   } catch (error) {
     res.status(500).json({ message: "Error updating process step" });
+  }
+});
+
+// Додати новий крок процесу
+router.post("/process", authenticateToken, async (req, res) => {
+  const { step_number, title, description } = req.body;
+  try {
+    const result = await db.run(`
+      INSERT INTO process_steps (step_number, title, description)
+      VALUES (?, ?, ?)
+    `, [step_number, title, description]);
+    res.json({ id: result.lastInsertRowid, message: "Process step created successfully" });
+  } catch (error) {
+    res.status(500).json({ message: "Error creating process step" });
+  }
+});
+
+// Видалити крок процесу
+router.delete("/process/:id", authenticateToken, async (req, res) => {
+  const { id } = req.params;
+  try {
+    await db.run("DELETE FROM process_steps WHERE id = ?", [id]);
+    res.json({ message: "Process step deleted successfully" });
+  } catch (error) {
+    res.status(500).json({ message: "Error deleting process step" });
   }
 });
 
@@ -141,6 +195,31 @@ router.put("/problem-cards/:id", authenticateToken, async (req, res) => {
   }
 });
 
+// Додати нову картку проблеми
+router.post("/problem-cards", authenticateToken, async (req, res) => {
+  const { title, description } = req.body;
+  try {
+    const result = await db.run(`
+      INSERT INTO problem_cards (title, description)
+      VALUES (?, ?)
+    `, [title, description]);
+    res.json({ id: result.lastInsertRowid, message: "Problem card created successfully" });
+  } catch (error) {
+    res.status(500).json({ message: "Error creating problem card" });
+  }
+});
+
+// Видалити картку проблеми
+router.delete("/problem-cards/:id", authenticateToken, async (req, res) => {
+  const { id } = req.params;
+  try {
+    await db.run("DELETE FROM problem_cards WHERE id = ?", [id]);
+    res.json({ message: "Problem card deleted successfully" });
+  } catch (error) {
+    res.status(500).json({ message: "Error deleting problem card" });
+  }
+});
+
 // ЗАХИЩЕНИЙ: Оновлення картки переваги
 router.put("/benefit-cards/:id", authenticateToken, async (req, res) => {
   const { id } = req.params;
@@ -156,6 +235,31 @@ router.put("/benefit-cards/:id", authenticateToken, async (req, res) => {
     res.json({ message: "Benefit card updated successfully" });
   } catch (error) {
     res.status(500).json({ message: "Error updating benefit card" });
+  }
+});
+
+// Додати нову картку переваги
+router.post("/benefit-cards", authenticateToken, async (req, res) => {
+  const { icon_name, title, result: resultText } = req.body;
+  try {
+    const dbResult = await db.run(`
+      INSERT INTO benefit_cards (icon_name, title, result)
+      VALUES (?, ?, ?)
+    `, [icon_name, title, resultText]);
+    res.json({ id: dbResult.lastInsertRowid, message: "Benefit card created successfully" });
+  } catch (error) {
+    res.status(500).json({ message: "Error creating benefit card" });
+  }
+});
+
+// Видалити картку переваги
+router.delete("/benefit-cards/:id", authenticateToken, async (req, res) => {
+  const { id } = req.params;
+  try {
+    await db.run("DELETE FROM benefit_cards WHERE id = ?", [id]);
+    res.json({ message: "Benefit card deleted successfully" });
+  } catch (error) {
+    res.status(500).json({ message: "Error deleting benefit card" });
   }
 });
 

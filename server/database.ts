@@ -211,13 +211,16 @@ export async function initDb() {
     ];
 
     for (const sql of tables) {
+      let finalSql = sql;
       if (db.isPostgres) {
-        // Adjust syntax for Postgres
-        const pgSql = sql.replace(/INTEGER PRIMARY KEY AUTOINCREMENT/g, 'SERIAL PRIMARY KEY')
-                         .replace(/DATETIME/g, 'TIMESTAMP');
-        await pgPool!.query(pgSql);
+        finalSql = sql.replace(/INTEGER PRIMARY KEY AUTOINCREMENT/g, 'SERIAL PRIMARY KEY')
+                      .replace(/DATETIME/g, 'TIMESTAMP');
+        await pgPool!.query(finalSql);
       } else {
-        sqliteDb!.prepare(sql).run();
+        finalSql = sql.replace(/SERIAL PRIMARY KEY/g, 'INTEGER PRIMARY KEY AUTOINCREMENT')
+                      .replace(/TIMESTAMP DEFAULT CURRENT_TIMESTAMP/g, 'DATETIME DEFAULT CURRENT_TIMESTAMP')
+                      .replace(/TIMESTAMP/g, 'DATETIME');
+        sqliteDb!.prepare(finalSql).run();
       }
     }
 
@@ -247,7 +250,21 @@ export async function initDb() {
 async function migrateData() {
   console.log('Checking for data migration from SQLite to PostgreSQL...');
   try {
-    // Migrate Articles as priority
+    // Helper to check if table is empty in Postgres
+    const isTableEmpty = async (table: string) => {
+      const res = await db.get(`SELECT COUNT(*) as count FROM ${table}`);
+      return parseInt(res.count) === 0;
+    };
+
+    // Migrate site_content
+    if (await isTableEmpty('site_content')) {
+      const sqliteContent = sqliteDb!.prepare('SELECT * FROM site_content').all() as any[];
+      for (const item of sqliteContent) {
+        await db.run('INSERT INTO site_content (section_key, content_json) VALUES (?, ?)', [item.section_key, item.content_json]);
+      }
+    }
+
+    // Migrate Articles
     const sqliteArticles = sqliteDb!.prepare('SELECT * FROM articles').all() as any[];
     for (const art of sqliteArticles) {
       const exists = await db.get('SELECT id FROM articles WHERE slug = ?', [art.slug]);
@@ -271,6 +288,26 @@ async function migrateData() {
         `, [lead.name, lead.contact, lead.message, lead.plan, lead.source, lead.status, lead.created_at]);
       }
     }
+
+    // Migrate other blocks if Postgres tables are empty
+    const tablesToMigrate = ['cases', 'pricing_plans', 'process_steps', 'problem_cards', 'benefit_cards', 'faq'];
+    for (const table of tablesToMigrate) {
+      if (await isTableEmpty(table)) {
+        const rows = sqliteDb!.prepare(`SELECT * FROM ${table}`).all() as any[];
+        if (rows.length > 0) {
+          console.log(`Migrating ${rows.length} rows for table: ${table}`);
+          for (const row of rows) {
+            const { id, created_at, updated_at, ...data } = row;
+            const keys = Object.keys(data);
+            const placeholders = keys.map(() => '?').join(', ');
+            const columns = keys.join(', ');
+            const values = keys.map(k => data[k]);
+            await db.run(`INSERT INTO ${table} (${columns}) VALUES (${placeholders})`, values);
+          }
+        }
+      }
+    }
+
     console.log('Migration check finished.');
   } catch (err) {
     console.error('Migration failed:', err);
@@ -278,14 +315,11 @@ async function migrateData() {
 }
 
 async function seedInitialContent() {
-  const count = await db.get('SELECT COUNT(*) as count FROM site_content');
-  if (count.count > 0) return;
-
   const sections = [
     {
       key: 'hero',
       content: {
-        title: 'Будую автономні системи , які перетворюють трафік  у гроші',
+        title: 'Будую автономні системи , які перетворюють трафік у гроші',
         subtitle: 'Ви вже платите за рекламу. Ви вже отримуєте переходи на сайт. Але питання не в трафіку. Питання в тому, що відбувається після кліку.\n\nУ більшості випадків сайт:\n— не пояснює цінність\n— не веде до дії\n— не обробляє заявку\n— і просто “зливає” потенційного клієнта\n\nЯ створюю системи, які працюють інакше.\n\nЦе не просто сайт. Це повноцінна система, яка:\n— приймає заявки\n— одразу надсилає їх у Telegram\n— зберігає всі контакти в базі\n— нагадує вам про клієнта, якщо ви не відповіли\n— і допомагає довести його до продажу\n\nПлюс: ви отримуєте окрему адмін-панель, де можете самостійно змінювати тексти, фото, відео і блоки без участі розробника.',
         primaryButtonText: 'Обговорити проект',
         secondaryButtonText: 'Отримати відео-розбір',
@@ -315,7 +349,7 @@ async function seedInitialContent() {
         ],
         image: '/roman-photo.jpg',
         experienceValue: '5+',
-        experienceLabel: 'Років досвіду',
+        experienceLabel: 'РОКІВ ДОСВІДУ',
         skills: ['React', 'TypeScript', 'Node.js', 'Framer Motion', 'Tailwind CSS', 'JavaScript', 'HTML', 'CSS', 'Webflow', 'Автоматизація', 'UX/UI Дизайн', 'CRM Integration', 'Telegram Bots']
       }
     },
@@ -323,21 +357,21 @@ async function seedInitialContent() {
       key: 'cta',
       content: {
         title: 'Отримайте безкоштовний відео-аудит вашого сайту',
-        subtitle: 'Я подивлюсь вашу сторінку і покажу: де ви втрачаєте клієнтів, що саме не працює, як це виправити. Це не загальні поради — це конкретні кроки під ваш бізнес.',
+        subtitle: 'Я подивлюсь вашу сторінку і покажу: де ви втрачаєте клієнтів, що саме не працює, як це виправити. Це не загальні поради — це конкретні кроки під ваш бізнес.\n\n*Консультація безкоштовна. Це вас ні до чого не зобов\'язує.',
         buttonText: 'Отримати розбір',
-        additionalText: '*Консультація безкоштовна. Це вас ні до чого не зобов\'язує.'
+        additionalText: ''
       }
     },
     {
       key: 'contacts',
       content: {
         title: 'Готові почати заробляти більше?',
-        subtitle: 'Напишіть мені — і ми розберемо ваш проект вже сьогодні. Ви отримаєте цінні знання, незалежно від того, чи будемо ми працювати разом вподальшому',
+        subtitle: 'Напишіть мені — і ми розберемо ваш проект вже сьогодні. Ви отримаєте цінні знання, незалежно від того, чи будемо ми працювати разом надалі',
         email: 'kizub888@gmail.com',
         telegram: '@Kizub_BRB',
-        formNameLabel: 'Ім’я',
-        formContactLabel: 'Телефон / Email',
-        formMessageLabel: 'Повідомлення',
+        formNameLabel: 'ІМ’Я',
+        formContactLabel: 'ТЕЛЕФОН / EMAIL',
+        formMessageLabel: 'ПОВІДОМЛЕННЯ',
         formButtonText: 'Надіслати запит'
       }
     },
@@ -358,66 +392,192 @@ async function seedInitialContent() {
         ogImage: '',
         favicon: ''
       }
+    },
+    {
+      key: 'problems_header',
+      content: {
+        title: 'Проблеми, які ми вирішуємо',
+        subtitle: 'Якщо ваш сайт просто “висить” в інтернеті — він не працює. Ось що ми виправляємо.'
+      }
+    },
+    {
+      key: 'benefits_header',
+      content: {
+        title: 'Чому це працює краще за звичайний сайт',
+        subtitle: 'Ми не просто малюємо картинки. Ми будуємо логіку, яка веде клієнта до покупки.'
+      }
+    },
+    {
+      key: 'speed_roi',
+      content: {
+        title: 'ШВИДКІСТЬ = ГРОШІ',
+        subtitle: 'Швидкість відповіді безпосередньо впливає на прибуток. Є проста закономірність: чим швидше ви відповідаєте — тим більша ймовірність продажу.',
+        description: 'Розрахуйте потенційний прибуток, який ви недоотримуєте через низьку конверсію.',
+        features: [
+          { title: 'Автоматизація', desc: 'заявка приходить одразу / Telegram сповіщення / авто-відповідь / нагадування' },
+          { title: 'Переваги', desc: 'не втрачаєте клієнтів / швидше за конкурентів / ріст конверсії' },
+          { title: 'Результат', desc: 'Стабільний потік заявок без зливу бюджету' }
+        ],
+        statPrefix: 'до',
+        statValue: '+400%',
+        statLabel: 'Ріст конверсії в продаж',
+        statDesc: 'при відповіді клієнту в перші 5 хвилин',
+        labelTraffic: 'ТРАФІК (ВІДВІДУВАЧІВ / МІС.)',
+        labelConversion: 'КОНВЕРСІЯ (%)',
+        labelCheck: 'СЕРЕДНІЙ ЧЕК (ГРН)',
+        labelCurrentRevenue: 'Поточний дохід:',
+        labelPotentialRevenue: 'Потенціал (при 5% конверсії):',
+        labelLostProfit: 'ВАША НЕДООТРИМАНА ВИГОДА:'
+      }
+    },
+    {
+      key: 'cases_header',
+      content: {
+        title: 'Результати, які можна виміряти в грошах',
+        subtitle: 'Кейси, де ми впровадили систему і вивели бізнес на новий рівень.'
+      }
+    },
+    {
+      key: 'process_header',
+      content: {
+        title: 'Як ми будуємо вашу систему',
+        subtitle: 'Від першого дзвінка до стабільного потоку заявок — всього 6 кроків.'
+      }
+    },
+    {
+      key: 'pricing_header',
+      content: {
+        title: 'Оберіть свій рівень масштабування',
+        subtitle: 'Ми підберемо рішення під ваші задачі: від швидкого старту до повного захоплення ринку.',
+        resultLabel: 'Результат:',
+        selectPlanLabel: 'Обрати цей формат'
+      }
+    },
+    {
+      key: 'faq_header',
+      content: {
+        title: 'Часті запитання',
+        subtitle: 'Відповіді на те, що зазвичай цікавить моїх клієнтів.'
+      }
     }
   ];
 
   for (const section of sections) {
-    await db.run('INSERT INTO site_content (section_key, content_json) VALUES (?, ?)', [section.key, JSON.stringify(section.content)]);
+    const exists = await db.get('SELECT id FROM site_content WHERE section_key = ?', [section.key]);
+    if (!exists) {
+      await db.run('INSERT INTO site_content (section_key, content_json) VALUES (?, ?)', [section.key, JSON.stringify(section.content)]);
+    } else {
+      // Update existing content to match the "correct" state from screenshots
+      await db.run('UPDATE site_content SET content_json = ? WHERE section_key = ?', [JSON.stringify(section.content), section.key]);
+    }
   }
 
   // Seed process_steps
-  const processCount = await db.get('SELECT COUNT(*) as count FROM process_steps');
-  if (processCount.count === 0) {
-    const steps = [
-      { num: '01', title: 'Аналіз та стратегія', desc: 'Занурююсь у ваш бізнес, вивчаю конкурентів та цільову аудиторію.' },
-      { num: '02', title: 'Прототипування', desc: 'Створюю логічну структуру та тексти, які будуть вести клієнта до покупки.' },
-      { num: '03', title: 'Дизайн', desc: 'Розробляю сучасний та зручний інтерфейс, що підкреслює вашу професійність.' },
-      { num: '04', title: 'Розробка', desc: 'Пишу чистий код на React/TypeScript для швидкої та стабільної роботи.' },
-      { num: '05', title: 'Автоматизація', desc: 'Налаштовую Telegram-ботів, CRM та сповіщення для миттєвої обробки заявок.' },
-      { num: '06', title: 'Запуск та підтримка', desc: 'Тестуємо систему, запускаємо та стежимо за показниками конверсії.' }
-    ];
-    for (const s of steps) {
-      await db.run('INSERT INTO process_steps (step_number, title, description) VALUES (?, ?, ?)', [s.num, s.title, s.desc]);
-    }
+  await db.run('DELETE FROM process_steps');
+  const steps = [
+    { num: '01', title: 'Аналіз', desc: 'Ми детально розбираємо: ваш продукт, конкурентів, як зараз приходять клієнти, де ви втрачаєте гроші.' },
+    { num: '02', title: 'Стратегія і структура', desc: 'Будуємо логіку сайту: що бачить клієнт, як він рухається, де приймає рішення.' },
+    { num: '03', title: 'Копірайтинг і прототип', desc: 'Пишемо тексти, які продають, і створюємо чорновий варіант системи.' },
+    { num: '04', title: 'Дизайн і розробка', desc: 'Створюємо візуальну частину, яка підкреслює вашу експертність, та програмуємо систему.' },
+    { num: '05', title: 'Автоматизація', desc: 'Підключаємо Telegram, CRM, налаштовуємо сповіщення та нагадування.' },
+    { num: '06', title: 'Запуск і підтримка', desc: 'Запускаємо систему, тестуємо і супроводжуємо перший місяць.' }
+  ];
+  for (const s of steps) {
+    await db.run('INSERT INTO process_steps (step_number, title, description) VALUES (?, ?, ?)', [s.num, s.title, s.desc]);
   }
 
   // Seed problem_cards
-  const problemCount = await db.get('SELECT COUNT(*) as count FROM problem_cards');
-  if (problemCount.count === 0) {
-    const problems = [
-      { title: 'Сайт не приносить заявок', desc: 'Відвідувачі заходять, але нічого не купують і не залишають контакти.' },
-      { title: 'Довга обробка лідів', desc: 'Ви дізнаєтесь про заявку занадто пізно, коли клієнт вже пішов до конкурентів.' },
-      { title: 'Хаос у контактах', desc: 'Дані клієнтів губляться в пошті, месенджерах або блокнотах.' }
-    ];
-    for (const p of problems) {
-      await db.run('INSERT INTO problem_cards (title, description) VALUES (?, ?)', [p.title, p.desc]);
-    }
+  await db.run('DELETE FROM problem_cards');
+  const problems = [
+    { title: 'Люди заходять на сайт і йдуть', desc: 'Користувач відкриває сторінку і за 3–5 секунд вирішує — залишатися чи ні. Якщо він не розуміє цінність — він просто закриває вкладку. І кожен такий перехід — це ваші гроші.' },
+    { title: 'Ви втрачаєте заявки після їх отримання', desc: 'Якщо ви відповідаєте через 30–60 хв або заявка \'загубилась\' — клієнт уже пішов до конкурента. Навіть гарячий лід остигає миттєво.' },
+    { title: 'Сайт не виконує функцію продажу', desc: 'Більшість сайтів — це просто \'вітрина\'. Вони виглядають нормально, але не ведуть до дії і не працюють як система. У результаті — немає стабільних заявок.' }
+  ];
+  for (const p of problems) {
+    await db.run('INSERT INTO problem_cards (title, description) VALUES (?, ?)', [p.title, p.desc]);
   }
 
   // Seed benefit_cards
-  const benefitCount = await db.get('SELECT COUNT(*) as count FROM benefit_cards');
-  if (benefitCount.count === 0) {
-    const benefits = [
-      { icon: 'Layout', title: 'Конверсійний дизайн', res: 'Збільшення кількості заявок у 2-3 рази за рахунок правильної структури.' },
-      { icon: 'Zap', title: 'Миттєві сповіщення', res: 'Ви отримуєте дані клієнта в Telegram через 1 секунду після натискання кнопки.' },
-      { icon: 'MessageSquare', title: 'Автоматичні відповіді', res: 'Клієнт отримує підтвердження або корисний файл одразу, що підвищує лояльність.' }
-    ];
-    for (const b of benefits) {
-      await db.run('INSERT INTO benefit_cards (icon_name, title, result) VALUES (?, ?, ?)', [b.icon, b.title, b.res]);
-    }
+  await db.run('DELETE FROM benefit_cards');
+  const benefits = [
+    { icon: 'Layout', title: 'Продумана структура', res: 'Ми будуємо логіку: що бачить людина, що вона думає і чому вона залишає заявку.' },
+    { icon: 'Zap', title: 'Швидкість і простота', res: 'Сайт завантажується миттєво і не перевантажує користувача. Все максимально зрозуміло.' },
+    { icon: 'MessageSquare', title: 'Повна обробка заявок', res: 'Заявка в Telegram, збереження в системі та автоматичні нагадування.' }
+  ];
+  for (const b of benefits) {
+    await db.run('INSERT INTO benefit_cards (icon_name, title, result) VALUES (?, ?, ?)', [b.icon, b.title, b.res]);
   }
 
   // Seed faq
-  const faqCount = await db.get('SELECT COUNT(*) as count FROM faq');
-  if (faqCount.count === 0) {
-    const faqs = [
-      { q: 'Скільки часу займає розробка?', a: 'В середньому від 7 до 14 днів, залежно від складності системи та обсягу контенту.' },
-      { q: 'Чи зможу я сам змінювати тексти?', a: 'Так, ви отримуєте зручну адмін-панель, де можна редагувати майже все без програміста.' },
-      { q: 'Що входить у підтримку?', a: 'Технічний супровід, виправлення помилок та дрібні правки протягом першого місяця безкоштовно.' }
-    ];
-    for (const f of faqs) {
-      await db.run('INSERT INTO faq (question, answer) VALUES (?, ?)', [f.q, f.a]);
+  await db.run('DELETE FROM faq');
+  const faqs = [
+    { q: 'Скільки часу займає розробка?', a: 'В середньому від 7 до 14 днів, залежно від складності системи та обсягу контенту.' },
+    { q: 'Чи потрібна мені CRM?', a: 'Якщо ви отримуєте більше 5 заявок на день — так. Це допоможе не втрачати клієнтів і бачити всю історію спілкування.' },
+    { q: 'Чи можна редагувати сайт самостійно?', a: 'Так, ви отримуєте зручну адмін-панель, де можна редагувати майже все без програміста.' },
+    { q: 'Що відбувається після заявки?', a: 'Заявка миттєво падає в Telegram, дублюється в базу даних, а клієнт отримує автоматичне підтвердження.' },
+    { q: 'Чи допомагаєте з рекламою?', a: 'Так, я можу налаштувати базову рекламу в Google або Facebook, щоб ви отримали перші результати одразу.' },
+    { q: 'Чи буде сайт показуватись у Google?', a: 'Так, я роблю базову SEO-оптимізацію, щоб пошукові системи правильно індексували ваш сайт.' },
+    { q: 'Чи є гарантія результату?', a: 'Я гарантую технічну якість та відповідність стратегії. Результат у грошах залежить також від вашого продукту та відділу продажу.' }
+  ];
+  for (const f of faqs) {
+    await db.run('INSERT INTO faq (question, answer) VALUES (?, ?)', [f.q, f.a]);
+  }
+
+  // Seed cases
+  await db.run('DELETE FROM cases');
+  const cases = [
+    {
+      niche: 'АДВОКАТСЬКЕ БЮРО',
+      title: 'Система для адвокатського бюро',
+      image: 'https://picsum.photos/seed/law/800/600',
+      problem: 'багато переходів, але мало заявок',
+      detailed_problem: 'Сайт мав багато відвідувачів з реклами, але конверсія в заявку була критично низькою. Бюджет витрачався, але клієнти не залишали контакти.',
+      solution: 'змінили структуру сайту — переписали тексти — додали логіку дій — підключили обробку заявок',
+      detailed_solution: 'Ми повністю переробили шлях клієнта. Замість загальних послуг виділили конкретні болі аудиторії. Впровадили систему миттєвих сповіщень у Telegram для юристів.',
+      result: '— збільшення кількості заявок — стабільний потік клієнтів — без збільшення бюджету',
+      link: 'https://example.com'
     }
+  ];
+  for (const c of cases) {
+    await db.run(`
+      INSERT INTO cases (niche, title, image, problem, detailed_problem, solution, detailed_solution, result, link)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+    `, [c.niche, c.title, c.image, c.problem, c.detailed_problem, c.solution, c.detailed_solution, c.result, c.link]);
+  }
+
+  // Seed pricing
+  await db.run('DELETE FROM pricing_plans');
+  const plans = [
+    {
+      name: 'Старт',
+      price: 'від 400$',
+      label: 'ДЛЯ ШВИДКОГО СТАРТУ',
+      featured: 0,
+      features: ['Лендінг', 'Аналіз конкурентів', 'Дизайн + Копірайтинг', 'Telegram сповіщення', 'Адаптив під мобільні'],
+      result_text: 'Швидкий запуск для перевірки ніші та отримання лідів'
+    },
+    {
+      name: 'Бізнес',
+      price: 'від 650$',
+      label: 'ГЕНЕРАЦІЯ ТА ОБРОБКА',
+      featured: 1,
+      features: ['Все з Тарифу Старт', 'Глибока стратегія', 'Складна автоматизація', 'Інтеграція з CRM', 'A/B тестування'],
+      result_text: 'Повноцінна система генерації та обробки лідів'
+    },
+    {
+      name: 'Про',
+      price: 'від 1000$',
+      label: 'БІЗНЕС-СИСТЕМА',
+      featured: 0,
+      features: ['Все з Тарифу Бізнес', 'Повна воронка продажів', 'UX-оптимізація', 'Супровід 1 місяць', 'Пріоритетна підтримка'],
+      result_text: 'Масштабована бізнес-система під ключ'
+    }
+  ];
+  for (const p of plans) {
+    await db.run(`
+      INSERT INTO pricing_plans (name, price, label, featured, features_json, result_text)
+      VALUES (?, ?, ?, ?, ?, ?)
+    `, [p.name, p.price, p.label, p.featured, JSON.stringify(p.features), p.result_text]);
   }
 }
 
