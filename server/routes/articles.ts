@@ -4,6 +4,21 @@ import { authenticateToken } from '../middleware/auth.js';
 
 const router = express.Router();
 
+const safeParse = (value: any, fallback = []) => {
+  try {
+    if (!value) return fallback;
+
+    if (typeof value === 'object') {
+      return Array.isArray(value) ? value : fallback;
+    }
+
+    const parsed = JSON.parse(value);
+    return Array.isArray(parsed) ? parsed : fallback;
+  } catch {
+    return fallback;
+  }
+};
+
 // Public: Get all published articles
 router.get('/', async (req, res) => {
   try {
@@ -25,10 +40,9 @@ router.get('/:slug', async (req, res) => {
     const article = await db.get('SELECT * FROM articles WHERE slug = ? AND is_published = 1', [req.params.slug]) as any;
     if (!article) return res.status(404).json({ message: 'Article not found' });
     
-    // Parse JSON fields if they are strings (SQLite)
-    if (typeof article.system_includes === 'string') article.system_includes = JSON.parse(article.system_includes || '[]');
-    if (typeof article.target_audience === 'string') article.target_audience = JSON.parse(article.target_audience || '[]');
-    if (typeof article.faq === 'string') article.faq = JSON.parse(article.faq || '[]');
+    article.system_includes = safeParse(article.system_includes);
+    article.target_audience = safeParse(article.target_audience);
+    article.faq = safeParse(article.faq);
     
     res.json(article);
   } catch (error) {
@@ -40,12 +54,12 @@ router.get('/:slug', async (req, res) => {
 router.get('/admin/all', authenticateToken, async (req, res) => {
   try {
     const articles = await db.all('SELECT * FROM articles ORDER BY created_at DESC');
-    const parsedArticles = articles.map((article: any) => {
-      if (typeof article.system_includes === 'string') article.system_includes = JSON.parse(article.system_includes || '[]');
-      if (typeof article.target_audience === 'string') article.target_audience = JSON.parse(article.target_audience || '[]');
-      if (typeof article.faq === 'string') article.faq = JSON.parse(article.faq || '[]');
-      return article;
-    });
+    const parsedArticles = articles.map((article: any) => ({
+      ...article,
+      system_includes: safeParse(article.system_includes),
+      target_audience: safeParse(article.target_audience),
+      faq: safeParse(article.faq),
+    }));
     res.json(parsedArticles);
   } catch (error) {
     res.status(500).json({ message: 'Error fetching articles' });
