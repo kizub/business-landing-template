@@ -230,6 +230,48 @@ async function ensureTables() {
 }
 
 /**
+ * Перевірка та додавання відсутніх колонок у таблицю articles.
+ * Це забезпечує зворотну сумісність при оновленні схеми.
+ */
+async function ensureArticlesColumns() {
+  const columnsToAdd = [
+    { name: 'system_includes', pgType: 'JSONB', sqliteType: 'TEXT' },
+    { name: 'target_audience', pgType: 'JSONB', sqliteType: 'TEXT' },
+    { name: 'faq', pgType: 'JSONB', sqliteType: 'TEXT' },
+    { name: 'seo_title', pgType: 'TEXT', sqliteType: 'TEXT' },
+    { name: 'seo_description', pgType: 'TEXT', sqliteType: 'TEXT' }
+  ];
+
+  if (db.isPostgres) {
+    // Отримуємо список існуючих колонок для PostgreSQL
+    const existingColumnsRes = await pgPool!.query(`
+      SELECT column_name 
+      FROM information_schema.columns 
+      WHERE table_name = 'articles'
+    `);
+    const existingColumns = existingColumnsRes.rows.map(r => r.column_name.toLowerCase());
+
+    for (const col of columnsToAdd) {
+      if (!existingColumns.includes(col.name.toLowerCase())) {
+        console.log(`Adding missing column '${col.name}' to 'articles' table (PostgreSQL)...`);
+        await pgPool!.query(`ALTER TABLE articles ADD COLUMN ${col.name} ${col.pgType}`);
+      }
+    }
+  } else {
+    // Отримуємо список існуючих колонок для SQLite
+    const tableInfo = sqliteDb!.prepare("PRAGMA table_info(articles)").all() as any[];
+    const existingColumns = tableInfo.map(col => col.name.toLowerCase());
+
+    for (const col of columnsToAdd) {
+      if (!existingColumns.includes(col.name.toLowerCase())) {
+        console.log(`Adding missing column '${col.name}' to 'articles' table (SQLite)...`);
+        sqliteDb!.prepare(`ALTER TABLE articles ADD COLUMN ${col.name} ${col.sqliteType}`).run();
+      }
+    }
+  }
+}
+
+/**
  * Безпечне заповнення бази даних початковими даними.
  * Дані додаються ТІЛЬКИ якщо таблиця порожня або запис не існує.
  * Жодних DELETE FROM або примусових UPDATE.
@@ -358,7 +400,10 @@ export async function initDb() {
     // 1. Створення таблиць (безпечно)
     await ensureTables();
 
-    // 2. Міграція даних (Тимчасово вимкнено за запитом користувача)
+    // 2. Додавання відсутніх колонок (безпечна міграція)
+    await ensureArticlesColumns();
+
+    // 3. Міграція даних (Тимчасово вимкнено за запитом користувача)
     /*
     if (db.isPostgres && sqliteDb && IS_PROD) {
       await migrateData();
