@@ -980,48 +980,56 @@ const Process = ({ items, content }: { items: any[], content: any }) => {
 
         {/* Mobile/Tablet Carousel */}
         <div className="lg:hidden relative">
-          <div className="flex items-center justify-center gap-4 mb-8">
-            <button 
-              onClick={prev}
-              className="w-12 h-12 rounded-full bg-white shadow-md flex items-center justify-center text-slate-900 hover:bg-accent hover:text-white transition-all"
-            >
-              <ChevronLeft size={24} />
-            </button>
-            <div className="text-sm font-bold text-slate-400 uppercase tracking-widest">
-              {content?.stepLabel || 'Крок'} {currentIndex + 1} з {items.length}
+          {items.length > 0 ? (
+            <>
+              <div className="flex items-center justify-center gap-4 mb-8">
+                <button 
+                  onClick={prev}
+                  className="w-12 h-12 rounded-full bg-white shadow-md flex items-center justify-center text-slate-900 hover:bg-accent hover:text-white transition-all"
+                >
+                  <ChevronLeft size={24} />
+                </button>
+                <div className="text-sm font-bold text-slate-400 uppercase tracking-widest">
+                  {content?.stepLabel || 'Крок'} {currentIndex + 1} з {items.length}
+                </div>
+                <button 
+                  onClick={next}
+                  className="w-12 h-12 rounded-full bg-white shadow-md flex items-center justify-center text-slate-900 hover:bg-accent hover:text-white transition-all"
+                >
+                  <ChevronRight size={24} />
+                </button>
+              </div>
+
+              <AnimatePresence mode="wait">
+                <motion.div
+                  key={currentIndex}
+                  initial={{ opacity: 0, x: 50 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  exit={{ opacity: 0, x: -50 }}
+                  transition={{ duration: 0.3 }}
+                  className="bg-white p-8 rounded-[40px] shadow-xl border border-slate-100 text-center max-w-md mx-auto"
+                >
+                  <div className="text-7xl font-black text-accent/10 mb-6">{items[currentIndex]?.step_number}</div>
+                  <h3 className="text-2xl font-bold text-slate-900 mb-4">{items[currentIndex]?.title}</h3>
+                  <p className="text-slate-600 leading-relaxed">{items[currentIndex]?.description}</p>
+                </motion.div>
+              </AnimatePresence>
+
+              <div className="flex justify-center gap-2 mt-8">
+                {items.map((_, i) => (
+                  <button 
+                    key={i}
+                    onClick={() => setCurrentIndex(i)}
+                    className={`w-2 h-2 rounded-full transition-all ${currentIndex === i ? 'w-8 bg-accent' : 'bg-slate-200'}`}
+                  />
+                ))}
+              </div>
+            </>
+          ) : (
+            <div className="text-center text-slate-400 py-12">
+              Процес розробки оновлюється...
             </div>
-            <button 
-              onClick={next}
-              className="w-12 h-12 rounded-full bg-white shadow-md flex items-center justify-center text-slate-900 hover:bg-accent hover:text-white transition-all"
-            >
-              <ChevronRight size={24} />
-            </button>
-          </div>
-
-          <AnimatePresence mode="wait">
-            <motion.div
-              key={currentIndex}
-              initial={{ opacity: 0, x: 50 }}
-              animate={{ opacity: 1, x: 0 }}
-              exit={{ opacity: 0, x: -50 }}
-              transition={{ duration: 0.3 }}
-              className="bg-white p-8 rounded-[40px] shadow-xl border border-slate-100 text-center max-w-md mx-auto"
-            >
-              <div className="text-7xl font-black text-accent/10 mb-6">{items[currentIndex].step_number}</div>
-              <h3 className="text-2xl font-bold text-slate-900 mb-4">{items[currentIndex].title}</h3>
-              <p className="text-slate-600 leading-relaxed">{items[currentIndex].description}</p>
-            </motion.div>
-          </AnimatePresence>
-
-          <div className="flex justify-center gap-2 mt-8">
-            {items.map((_, i) => (
-              <button 
-                key={i}
-                onClick={() => setCurrentIndex(i)}
-                className={`w-2 h-2 rounded-full transition-all ${currentIndex === i ? 'w-8 bg-accent' : 'bg-slate-200'}`}
-              />
-            ))}
-          </div>
+          )}
         </div>
       </div>
     </section>

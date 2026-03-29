@@ -364,6 +364,61 @@ async function seedInitialContent() {
   for (const section of sections) {
     await db.run('INSERT INTO site_content (section_key, content_json) VALUES (?, ?)', [section.key, JSON.stringify(section.content)]);
   }
+
+  // Seed process_steps
+  const processCount = await db.get('SELECT COUNT(*) as count FROM process_steps');
+  if (processCount.count === 0) {
+    const steps = [
+      { num: '01', title: 'Аналіз та стратегія', desc: 'Занурююсь у ваш бізнес, вивчаю конкурентів та цільову аудиторію.' },
+      { num: '02', title: 'Прототипування', desc: 'Створюю логічну структуру та тексти, які будуть вести клієнта до покупки.' },
+      { num: '03', title: 'Дизайн', desc: 'Розробляю сучасний та зручний інтерфейс, що підкреслює вашу професійність.' },
+      { num: '04', title: 'Розробка', desc: 'Пишу чистий код на React/TypeScript для швидкої та стабільної роботи.' },
+      { num: '05', title: 'Автоматизація', desc: 'Налаштовую Telegram-ботів, CRM та сповіщення для миттєвої обробки заявок.' },
+      { num: '06', title: 'Запуск та підтримка', desc: 'Тестуємо систему, запускаємо та стежимо за показниками конверсії.' }
+    ];
+    for (const s of steps) {
+      await db.run('INSERT INTO process_steps (step_number, title, description) VALUES (?, ?, ?)', [s.num, s.title, s.desc]);
+    }
+  }
+
+  // Seed problem_cards
+  const problemCount = await db.get('SELECT COUNT(*) as count FROM problem_cards');
+  if (problemCount.count === 0) {
+    const problems = [
+      { title: 'Сайт не приносить заявок', desc: 'Відвідувачі заходять, але нічого не купують і не залишають контакти.' },
+      { title: 'Довга обробка лідів', desc: 'Ви дізнаєтесь про заявку занадто пізно, коли клієнт вже пішов до конкурентів.' },
+      { title: 'Хаос у контактах', desc: 'Дані клієнтів губляться в пошті, месенджерах або блокнотах.' }
+    ];
+    for (const p of problems) {
+      await db.run('INSERT INTO problem_cards (title, description) VALUES (?, ?)', [p.title, p.desc]);
+    }
+  }
+
+  // Seed benefit_cards
+  const benefitCount = await db.get('SELECT COUNT(*) as count FROM benefit_cards');
+  if (benefitCount.count === 0) {
+    const benefits = [
+      { icon: 'Layout', title: 'Конверсійний дизайн', res: 'Збільшення кількості заявок у 2-3 рази за рахунок правильної структури.' },
+      { icon: 'Zap', title: 'Миттєві сповіщення', res: 'Ви отримуєте дані клієнта в Telegram через 1 секунду після натискання кнопки.' },
+      { icon: 'MessageSquare', title: 'Автоматичні відповіді', res: 'Клієнт отримує підтвердження або корисний файл одразу, що підвищує лояльність.' }
+    ];
+    for (const b of benefits) {
+      await db.run('INSERT INTO benefit_cards (icon_name, title, result) VALUES (?, ?, ?)', [b.icon, b.title, b.res]);
+    }
+  }
+
+  // Seed faq
+  const faqCount = await db.get('SELECT COUNT(*) as count FROM faq');
+  if (faqCount.count === 0) {
+    const faqs = [
+      { q: 'Скільки часу займає розробка?', a: 'В середньому від 7 до 14 днів, залежно від складності системи та обсягу контенту.' },
+      { q: 'Чи зможу я сам змінювати тексти?', a: 'Так, ви отримуєте зручну адмін-панель, де можна редагувати майже все без програміста.' },
+      { q: 'Що входить у підтримку?', a: 'Технічний супровід, виправлення помилок та дрібні правки протягом першого місяця безкоштовно.' }
+    ];
+    for (const f of faqs) {
+      await db.run('INSERT INTO faq (question, answer) VALUES (?, ?)', [f.q, f.a]);
+    }
+  }
 }
 
 export default db;
