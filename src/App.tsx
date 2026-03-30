@@ -30,6 +30,7 @@ import {
 } from 'lucide-react';
 import { getContent, getArticles, getArticle } from './services/api';
 import Admin from './admin/Admin';
+import ChatLauncher from './components/chat/ChatLauncher';
 
 // --- Public Components ---
 
@@ -1873,6 +1874,7 @@ const App = () => {
         <Route path="/blog/:slug" element={<ArticleView content={heroContent} />} />
         <Route path="/" element={<PublicSite data={data} />} />
       </Routes>
+      <ChatLauncher siteType="portfolio" />
     </Router>
   );
 };
