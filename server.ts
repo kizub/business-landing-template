@@ -62,6 +62,7 @@ import uploadRoutes from "./server/routes/uploads.js";
 import contactRoutes from "./server/routes/contact.js";
 import statsRoutes from "./server/routes/stats.js";
 import articleRoutes from "./server/routes/articles.js";
+import chatRoutes from "./server/routes/chat.js";
 
 dotenv.config();
 
@@ -146,6 +147,7 @@ async function startServer() {
   app.use("/api/contact", contactRoutes);
   app.use("/api/stats", statsRoutes);
   app.use("/api/articles", articleRoutes);
+  app.use("/api/chat", chatRoutes);
 
   // SEO Injection Middleware for Blog - Universal (not just for bots)
   app.get("/blog/:slug", async (req, res, next) => {

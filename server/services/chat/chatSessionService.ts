@@ -1,0 +1,75 @@
+import { ChatMessagePayload, ChatSession, AssistantResponse } from "../../types/chat.js";
+import { chatMemoryStore } from "./chatMemoryStore.js";
+import { getMockAiResponse } from "./chatMockAi.js";
+
+export const processChatMessage = (payload: ChatMessagePayload): AssistantResponse => {
+  const { sessionId, message, siteType, pageUrl, timestamp, quickAction } = payload;
+  const MAX_MESSAGES = 12;
+  const effectiveMessage = quickAction || message;
+  
+  let session = chatMemoryStore.getSession(sessionId);
+  
+  if (!session) {
+    session = {
+      sessionId,
+      siteType,
+      entryPage: pageUrl,
+      lastPage: pageUrl,
+      leadCreated: false,
+      intent: "unknown",
+      messages: [],
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString()
+    };
+  } else {
+    session.lastPage = pageUrl;
+    session.updatedAt = new Date().toISOString();
+  }
+
+  // Add user message
+  session.messages.push({
+    role: "user",
+    text: message,
+    createdAt: timestamp || new Date().toISOString()
+  });
+
+  // Get AI Response
+  let aiResponse = getMockAiResponse(effectiveMessage, siteType);
+
+  // Fallback if response is invalid
+  if (!aiResponse || !aiResponse.reply) {
+    aiResponse = {
+      reply: "Вибачте, не вдалося обробити запит. Спробуйте ще раз.",
+      intent: "unknown",
+      lead_ready: false,
+      show_form: false,
+      quick_replies: [],
+      captured_fields: {},
+      cta: { label: "Отримати розрахунок", visible: true }
+    };
+  }
+
+  // Update session with AI findings
+  session.intent = aiResponse.intent;
+  if (aiResponse.captured_fields) {
+    if (aiResponse.captured_fields.service_interest) {
+      session.serviceInterest = aiResponse.captured_fields.service_interest;
+    }
+  }
+
+  // Add assistant message
+  session.messages.push({
+    role: "assistant",
+    text: aiResponse.reply,
+    createdAt: new Date().toISOString()
+  });
+
+  // Limit messages
+  if (session.messages.length > MAX_MESSAGES) {
+    session.messages = session.messages.slice(-MAX_MESSAGES);
+  }
+
+  chatMemoryStore.setSession(sessionId, session);
+
+  return aiResponse;
+};
