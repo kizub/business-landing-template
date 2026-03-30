@@ -1,8 +1,8 @@
 import { ChatMessagePayload, ChatSession, AssistantResponse } from "../../types/chat.js";
 import { chatMemoryStore } from "./chatMemoryStore.js";
-import { getMockAiResponse } from "./chatMockAi.js";
+import { getOpenAiResponse } from "./chatOpenAi.js";
 
-export const processChatMessage = (payload: ChatMessagePayload): AssistantResponse => {
+export const processChatMessage = async (payload: ChatMessagePayload): Promise<AssistantResponse> => {
   const { sessionId, message, siteType, pageUrl, timestamp, quickAction } = payload;
   const MAX_MESSAGES = 12;
   const effectiveMessage = quickAction || message;
@@ -26,7 +26,10 @@ export const processChatMessage = (payload: ChatMessagePayload): AssistantRespon
     session.updatedAt = new Date().toISOString();
   }
 
-  // Add user message
+  // Get AI Response (pass session messages before adding current user message)
+  const sessionMessages = [...session.messages];
+
+  // Add user message to session
   session.messages.push({
     role: "user",
     text: message,
@@ -34,7 +37,7 @@ export const processChatMessage = (payload: ChatMessagePayload): AssistantRespon
   });
 
   // Get AI Response
-  let aiResponse = getMockAiResponse(effectiveMessage, siteType);
+  let aiResponse = await getOpenAiResponse(effectiveMessage, siteType, sessionMessages);
 
   // Fallback if response is invalid
   if (!aiResponse || !aiResponse.reply) {

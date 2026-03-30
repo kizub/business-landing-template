@@ -6,7 +6,7 @@ import { ChatMessagePayload, LeadPayload } from "../types/chat.js";
 const router = Router();
 
 // POST /api/chat/message
-router.post("/message", (req: Request, res: Response) => {
+router.post("/message", async (req: Request, res: Response) => {
   try {
     const payload = req.body as ChatMessagePayload;
 
@@ -24,14 +24,17 @@ router.post("/message", (req: Request, res: Response) => {
       return res.status(400).json({ ok: false, error: "invalid siteType" });
     }
 
-    const aiResponse = processChatMessage(payload);
+    const aiResponse = await processChatMessage(payload);
 
     return res.json({
       ok: true,
       data: aiResponse
     });
-  } catch (error) {
+  } catch (error: any) {
     console.error("Chat message error:", error);
+    if (error.message === "OPENAI_API_KEY is not configured") {
+      return res.status(500).json({ ok: false, error: "AI service not configured" });
+    }
     return res.status(500).json({ ok: false, error: "Internal server error" });
   }
 });
