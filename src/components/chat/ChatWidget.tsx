@@ -18,25 +18,27 @@ const ChatWidget: React.FC<Props> = ({ session, siteType }) => {
 
   const handleSend = async (text: string, quickAction: string = "") => {
     if (isTyping) return;
+
     session.addMessage({ role: 'user', text });
     setIsTyping(true);
 
     try {
       const response = await sendMessage(session.sessionId, text, siteType, quickAction);
       setIsTyping(false);
-      
-      if (response.ok && response.data) {
-        session.addMessage({
-          role: 'assistant',
-          text: response.data.reply,
-          quickReplies: response.data.quick_replies,
-          cta: response.data.cta,
-          showForm: response.data.show_form
-        });
-      }
+
+      session.addMessage({
+        role: 'assistant',
+        text: response.reply,
+        quickReplies: response.quick_replies,
+        cta: response.cta,
+        showForm: response.show_form
+      });
     } catch (err) {
       setIsTyping(false);
-      session.addMessage({ role: 'assistant', text: "Вибачте, виникла помилка. Спробуйте пізніше." });
+      session.addMessage({
+        role: 'assistant',
+        text: "Вибачте, виникла помилка. Спробуйте пізніше."
+      });
     }
   };
 
@@ -57,14 +59,16 @@ const ChatWidget: React.FC<Props> = ({ session, siteType }) => {
       <div className="flex-1 overflow-y-auto p-4 space-y-4 bg-slate-50">
         <ChatMessages messages={session.messages} />
         {isTyping && <TypingIndicator />}
-        
+
         {!isTyping && lastMessage?.cta?.visible && (
-          <button 
-            onClick={() => session.addMessage({
-              role: 'assistant',
-              text: 'Давайте зафіксуємо вашу заявку 👇',
-              showForm: true
-            })}
+          <button
+            onClick={() =>
+              session.addMessage({
+                role: 'assistant',
+                text: 'Давайте зафіксуємо вашу заявку 👇',
+                showForm: true
+              })
+            }
             className="w-full py-2 bg-accent text-white rounded-lg text-sm font-bold shadow-sm hover:bg-accent/90 transition-colors"
           >
             {lastMessage.cta.label}
@@ -78,9 +82,9 @@ const ChatWidget: React.FC<Props> = ({ session, siteType }) => {
 
       <div className="p-2 bg-white border-t border-slate-100">
         {!isTyping && lastMessage?.quickReplies && (
-          <ChatQuickReplies 
-            replies={lastMessage.quickReplies} 
-            onSelect={(r) => handleSend(r, r)} 
+          <ChatQuickReplies
+            replies={lastMessage.quickReplies}
+            onSelect={(r) => handleSend(r, r)}
           />
         )}
         <ChatInput onSend={(t) => handleSend(t)} disabled={isTyping} />
