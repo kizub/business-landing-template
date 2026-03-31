@@ -28,18 +28,15 @@ export interface ChatRequest {
 }
 
 export interface ChatResponse {
-  ok: boolean;
-  data: {
-    reply: string;
-    intent: string;
-    lead_ready: boolean;
-    show_form: boolean;
-    quick_replies: string[];
-    captured_fields: Record<string, any>;
-    cta: {
-      label: string;
-      visible: boolean;
-    };
+  reply: string;
+  intent: string;
+  lead_ready: boolean;
+  show_form: boolean;
+  quick_replies: string[];
+  captured_fields: Record<string, any>;
+  cta: {
+    label: string;
+    visible: boolean;
   };
 }
 
