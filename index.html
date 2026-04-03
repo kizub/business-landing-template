@@ -5,63 +5,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Roman Dev | Автономні системи залучення клієнтів | Roman Dev</title>
     <link rel="icon" type="image/png" href="/favicon.png" />
-    <!-- Google Analytics (GA4) -->
-    <script async src="https://www.googletagmanager.com/gtag/js?id=%VITE_GA_MEASUREMENT_ID%"></script>
-    <script>
-      window.dataLayer = window.dataLayer || [];
-      function gtag(){dataLayer.push(arguments);}
-      gtag('js', new Date());
-      gtag('config', '%VITE_GA_MEASUREMENT_ID%');
-    </script>
-
-    <!-- reCAPTCHA v3 -->
-    <script src="https://www.google.com/recaptcha/api.js?render=%VITE_RECAPTCHA_SITE_KEY%"></script>
-  </head>
-  <body>
-    <div id="root"></div>
-    
-    <!-- Facebook Pixel -->
-    <div id="fb-pixel-setup" style="display:none">%VITE_FB_PIXEL_ID%</div>
-    <script>
-      (function() {
-        const setup = document.getElementById('fb-pixel-setup');
-        if (!setup) return;
-        const val = setup.innerHTML.trim();
-        const placeholder = '%' + 'VITE_FB_PIXEL_ID' + '%';
-        if (!val || val === placeholder) return;
-
-        if (val.includes('<script')) {
-          // If it's a full block, inject it properly so scripts execute
-          const range = document.createRange();
-          const fragment = range.createContextualFragment(val);
-          document.body.appendChild(fragment);
-        } else {
-          // It's just an ID, run the standard snippet
-          !function(f,b,e,v,n,t,s)
-          {if(f.fbq)return;n=f.fbq=function(){n.callMethod?
-          n.callMethod.apply(n,arguments):n.queue.push(arguments)};
-          if(!f._fbq)f._fbq=n;n.push=n;n.loaded=!0;n.version='2.0';
-          n.queue=[];t=b.createElement(e);t.async=!0;
-          t.src=v;s=b.getElementsByTagName(e)[0];
-          s.parentNode.insertBefore(t,s)}(window, document,'script',
-          'https://connect.facebook.net/en_US/fbevents.js');
-          
-          fbq('init', val);
-          fbq('track', 'PageView');
-          
-          // Add noscript fallback for ID-only case
-          const noscript = document.createElement('noscript');
-          const img = document.createElement('img');
-          img.height = '1';
-          img.width = '1';
-          img.style.display = 'none';
-          img.src = 'https://www.facebook.com/tr?id=' + val + '&ev=PageView&noscript=1';
-          img.referrerPolicy = 'no-referrer';
-          noscript.appendChild(img);
-          document.body.appendChild(noscript);
-        }
-      })();
-    </script>
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>
