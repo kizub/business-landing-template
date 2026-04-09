@@ -41,46 +41,28 @@ router.post("/", async (req, res) => {
     // We continue to try webhook even if DB fails
   }
 
-  // 2. Send to Webhook (Make.com / Telegram) - Run in background to not block user
-  const webhookUrl = process.env.MAKE_WEBHOOK_URL?.trim();
-  
-  if (webhookUrl && webhookUrl.startsWith('http')) {
-    // Fire and forget (with logging)
+  // 2. Send to Telegram - Run in background to not block user
+  const botToken = process.env.TELEGRAM_BOT_TOKEN;
+  const chatId = process.env.TELEGRAM_CHAT_ID;
+
+  if (botToken && chatId) {
     (async () => {
       try {
-        console.log(`[Background] Sending lead ${leadId} to webhook: ${webhookUrl}`);
-        const payload = {
-          id: leadId,
-          name: name,
-          contact: contact,
-          phone: contact,
-          telegram: contact,
-          message: message || "",
-          comment: message || "",
-          plan: plan || "Not specified",
-          source: source || "Website Contact Form",
-          timestamp: new Date().toISOString(),
-          url: req.headers.referer || "unknown"
-        };
-        
-        const webhookResponse = await axios.post(webhookUrl, payload, {
-          headers: { 'Content-Type': 'application/json' },
-          timeout: 10000 // 10 second timeout for background task
+        console.log(`[Background] Sending lead ${leadId} to Telegram`);
+        const referer = req.headers.referer || "unknown";
+        const messageText = `🚀 Нова заявка з сайту\n\n👤 Ім'я: ${name || "-"}\n📞 Контакт: ${contact || "-"}\n💎 План: ${plan || "Не вказано"}\n📍 Джерело: ${source || "Основна форма"}\n🔗 Сторінка: ${referer}\n\n📝 Повідомлення:\n${message || "-"}\n\nID в БД: ${leadId}`;
+
+        await axios.post(`https://api.telegram.org/bot${botToken}/sendMessage`, {
+          chat_id: chatId,
+          text: messageText,
         });
-        
-        console.log(`[Background] Webhook success for lead ${leadId}. Status: ${webhookResponse.status}`);
-      } catch (error: any) {
-        console.error(`[Background] Webhook error for lead ${leadId}:`);
-        if (error.response) {
-          console.error("Status:", error.response.status);
-          console.error("Data:", error.response.data);
-        } else {
-          console.error("Message:", error.message);
-        }
+        console.log(`[Background] Telegram notification sent for lead ${leadId}`);
+      } catch (tgErr: any) {
+        console.error(`[Background] Error sending lead ${leadId} to Telegram:`, tgErr?.message || tgErr);
       }
     })();
   } else {
-    console.warn("MAKE_WEBHOOK_URL is not defined or invalid. Skipping webhook.");
+    console.warn("TELEGRAM_BOT_TOKEN or TELEGRAM_CHAT_ID is not defined. Skipping Telegram notification.");
   }
 
   return res.json({ 

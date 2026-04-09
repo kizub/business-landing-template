@@ -134,21 +134,32 @@ router.post("/lead", async (req: Request, res: Response) => {
       chatMemoryStore.setSession(payload.sessionId, session);
     }
 
-    // Send to Telegram
-    const botToken = process.env.TELEGRAM_BOT_TOKEN;
-    const chatId = process.env.TELEGRAM_CHAT_ID;
+    // Send to Telegram - Run in background to not block response
+    const botToken = process.env.TELEGRAM_BOT_TOKEN?.trim();
+    const chatId = process.env.TELEGRAM_CHAT_ID?.trim();
 
     if (botToken && chatId) {
-      try {
-        const messageText = `Нова заявка з AI-менеджера\n\nІм'я: ${payload.name || "-"}\nТелефон: ${payload.phone || "-"}\nTelegram: ${payload.telegram || "-"}\nКоментар: ${payload.comment || "-"}\n\nВижимка діалогу:\n${summary}\n\nSession ID: ${payload.sessionId}\nSource: website_chat`;
+      (async () => {
+        try {
+          const messageText = `🤖 Нова заявка з AI-менеджера\n\n👤 Ім'я: ${payload.name || "-"}\n📞 Телефон: ${payload.phone || "-"}\n✈️ Telegram: ${payload.telegram || "-"}\n💬 Коментар: ${payload.comment || "-"}\n\n📝 Вижимка діалогу:\n${summary}\n\n🆔 Session: ${payload.sessionId}\n📍 Source: website_chat`;
 
-        await axios.post(`https://api.telegram.org/bot${botToken}/sendMessage`, {
-          chat_id: chatId,
-          text: messageText,
-        });
-      } catch (tgErr: any) {
-        console.error("Error sending lead to Telegram:", tgErr?.message || tgErr);
-      }
+          const tgRes = await axios.post(`https://api.telegram.org/bot${botToken}/sendMessage`, {
+            chat_id: chatId,
+            text: messageText,
+          });
+          console.log(`[Telegram] Chat lead sent successfully. Message ID: ${tgRes.data?.result?.message_id}`);
+        } catch (tgErr: any) {
+          console.error("[Telegram] Error sending chat lead:");
+          if (tgErr.response) {
+            console.error(`- Status: ${tgErr.response.status}`);
+            console.error(`- Data: ${JSON.stringify(tgErr.response.data)}`);
+          } else {
+            console.error(`- Message: ${tgErr.message}`);
+          }
+        }
+      })();
+    } else {
+      console.warn("[Telegram] Missing TELEGRAM_BOT_TOKEN or TELEGRAM_CHAT_ID for chat lead.");
     }
 
     return res.json({ ok: true });

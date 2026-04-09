@@ -20,11 +20,6 @@ const ChatWidget: React.FC<Props> = ({ session, siteType }) => {
   const handleSend = async (text: string, quickAction: string = "") => {
     if (isTyping) return;
 
-    // If user explicitly wants to leave a lead via quick reply, we can force the form
-    const isLeadRequest = quickAction.toLowerCase().includes('заявку') || 
-                         quickAction.toLowerCase().includes('контакт') ||
-                         text.toLowerCase().includes('залишити заявку');
-
     session.addMessage({ role: 'user', text });
     setIsTyping(true);
 
@@ -37,12 +32,12 @@ const ChatWidget: React.FC<Props> = ({ session, siteType }) => {
         text: response.reply,
         quickReplies: response.quick_replies,
         cta: response.cta,
-        showForm: response.show_form || isLeadRequest
+        showForm: response.show_form
       };
 
       session.addMessage(assistantMsg);
       
-      if (response.show_form || isLeadRequest) {
+      if (response.show_form) {
         setShowLeadForm(true);
       }
     } catch (err) {
