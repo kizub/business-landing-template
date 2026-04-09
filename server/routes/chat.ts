@@ -1,5 +1,6 @@
 import { Router, Request, Response } from "express";
 import { ChatMessagePayload, LeadPayload } from "../types/chat.js";
+import axios from "axios";
 import { processChatMessage } from "../services/chat/chatSessionService.js";
 import { db } from "../database.js";
 import { chatMemoryStore } from "../services/chat/chatMemoryStore.js";
@@ -92,6 +93,23 @@ router.post("/lead", async (req: Request, res: Response) => {
       session.leadCreated = true;
       session.updatedAt = new Date().toISOString();
       chatMemoryStore.setSession(payload.sessionId, session);
+    }
+
+    // Send to Telegram
+    const botToken = process.env.TELEGRAM_BOT_TOKEN;
+    const chatId = process.env.TELEGRAM_CHAT_ID;
+
+    if (botToken && chatId) {
+      try {
+        const messageText = `Нова заявка з AI-менеджера\n\nІм'я: ${payload.name || "-"}\nТелефон: ${payload.phone || "-"}\nTelegram: ${payload.telegram || "-"}\nКоментар: ${payload.comment || "-"}\nSession ID: ${payload.sessionId}\nSource: website_chat`;
+
+        await axios.post(`https://api.telegram.org/bot${botToken}/sendMessage`, {
+          chat_id: chatId,
+          text: messageText,
+        });
+      } catch (tgErr: any) {
+        console.error("Error sending lead to Telegram:", tgErr?.message || tgErr);
+      }
     }
 
     return res.json({ ok: true });
