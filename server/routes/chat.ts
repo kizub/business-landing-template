@@ -24,6 +24,43 @@ function isNonEmptyString(value: unknown): value is string {
   return typeof value === "string" && value.trim().length > 0;
 }
 
+function generateDialogueSummary(messages: any[]): string {
+  if (!messages || messages.length === 0) return "-";
+  
+  const userMessages = messages.filter(m => m.role === 'user');
+  if (userMessages.length === 0) return "-";
+
+  const summaryLines: string[] = [];
+  const allUserText = userMessages.map(m => m.text.toLowerCase()).join(' ');
+  
+  // Facts from dialogue
+  if (allUserText.includes('цін') || allUserText.includes('вартість') || allUserText.includes('скільки')) {
+    summaryLines.push("- Питав про вартість послуг");
+  }
+  
+  if (allUserText.includes('лендінг') || allUserText.includes('landing')) {
+    summaryLines.push("- Обговорювали розробку лендінгу");
+  } else if (allUserText.includes('сайт') || allUserText.includes('бізнес')) {
+    summaryLines.push("- Обговорювали бізнес-сайт");
+  }
+
+  if (allUserText.includes('ai') || allUserText.includes('менеджер') || allUserText.includes('бот')) {
+    summaryLines.push("- Цікавився AI-менеджером/автоматизацією");
+  }
+
+  if (allUserText.includes('заявк') || allUserText.includes('контакт') || allUserText.includes('залишити')) {
+    summaryLines.push("- Виявив готовність залишити контакти");
+  }
+
+  // Add last user message as context if summary is short
+  if (summaryLines.length < 3) {
+    const lastMsg = userMessages[userMessages.length - 1].text;
+    summaryLines.push(`- Останній меседж: "${lastMsg.substring(0, 60)}${lastMsg.length > 60 ? '...' : ''}"`);
+  }
+
+  return summaryLines.slice(0, 5).join('\n');
+}
+
 // POST /api/chat/message
 router.post("/message", async (req: Request, res: Response) => {
   try {
@@ -65,6 +102,7 @@ router.post("/lead", async (req: Request, res: Response) => {
     const contact = [payload.phone, payload.telegram].filter(Boolean).join(' / ');
     const source = "website_chat";
     const session = chatMemoryStore.getSession(payload.sessionId);
+    const summary = session ? generateDialogueSummary(session.messages) : "-";
 
     const existing = await db.get('SELECT id FROM leads WHERE session_id = ?', [payload.sessionId]);
     
@@ -73,15 +111,16 @@ router.post("/lead", async (req: Request, res: Response) => {
         `UPDATE leads SET 
           name = ?, 
           contact = ?, 
-          message = ?
+          message = ?,
+          summary = ?
         WHERE session_id = ?`,
-        [payload.name, contact, payload.comment, payload.sessionId]
+        [payload.name, contact, payload.comment, summary, payload.sessionId]
       );
     } else {
       await db.run(
-        `INSERT INTO leads (session_id, name, contact, message, source) 
-         VALUES (?, ?, ?, ?, ?)`,
-        [payload.sessionId, payload.name, contact, payload.comment, source]
+        `INSERT INTO leads (session_id, name, contact, message, summary, source) 
+         VALUES (?, ?, ?, ?, ?, ?)`,
+        [payload.sessionId, payload.name, contact, payload.comment, summary, source]
       );
     }
 
@@ -101,7 +140,7 @@ router.post("/lead", async (req: Request, res: Response) => {
 
     if (botToken && chatId) {
       try {
-        const messageText = `Нова заявка з AI-менеджера\n\nІм'я: ${payload.name || "-"}\nТелефон: ${payload.phone || "-"}\nTelegram: ${payload.telegram || "-"}\nКоментар: ${payload.comment || "-"}\nSession ID: ${payload.sessionId}\nSource: website_chat`;
+        const messageText = `Нова заявка з AI-менеджера\n\nІм'я: ${payload.name || "-"}\nТелефон: ${payload.phone || "-"}\nTelegram: ${payload.telegram || "-"}\nКоментар: ${payload.comment || "-"}\n\nВижимка діалогу:\n${summary}\n\nSession ID: ${payload.sessionId}\nSource: website_chat`;
 
         await axios.post(`https://api.telegram.org/bot${botToken}/sendMessage`, {
           chat_id: chatId,

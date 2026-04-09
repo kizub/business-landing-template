@@ -190,6 +190,7 @@ async function ensureTables() {
       name TEXT,
       contact TEXT,
       message TEXT,
+      summary TEXT,
       plan TEXT,
       source TEXT,
       status TEXT DEFAULT 'new',
