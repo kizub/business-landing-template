@@ -437,6 +437,16 @@ const LeadsEditor = ({ leads, onUpdateStatus, onDelete }: { leads: any[], onUpda
     }
   };
 
+  const formatDate = (dateStr: string) => {
+    try {
+      const date = new Date(dateStr);
+      if (isNaN(date.getTime())) return dateStr;
+      return date.toLocaleDateString() + ' ' + date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    } catch (e) {
+      return dateStr;
+    }
+  };
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between mb-6">
@@ -468,17 +478,20 @@ const LeadsEditor = ({ leads, onUpdateStatus, onDelete }: { leads: any[], onUpda
               <div className="flex flex-wrap items-start justify-between gap-4 mb-4">
                 <div className="flex items-center gap-4">
                   <div className="w-12 h-12 bg-white rounded-2xl flex items-center justify-center text-slate-400 border border-slate-100">
-                    <User size={24} />
+                    {lead.source === 'website_chat' ? <MessageSquare className="text-accent" size={24} /> : <User size={24} />}
                   </div>
                   <div>
-                    <h4 className="font-bold text-slate-900 text-lg">{lead.name}</h4>
+                    <h4 className="font-bold text-slate-900 text-lg">{lead.name || 'Анонім'}</h4>
                     <div className="flex items-center gap-3 text-sm text-slate-500">
                       <span className="flex items-center gap-1"><Phone size={14} /> {lead.contact}</span>
-                      <span className="flex items-center gap-1"><Calendar size={14} /> {new Date(lead.created_at).toLocaleDateString()}</span>
+                      <span className="flex items-center gap-1"><Calendar size={14} /> {formatDate(lead.created_at)}</span>
                     </div>
                   </div>
                 </div>
                 <div className="flex items-center gap-2">
+                  {lead.source === 'website_chat' && (
+                    <span className="px-2 py-1 bg-accent/10 text-accent text-[10px] font-black uppercase rounded-md">AI Lead</span>
+                  )}
                   <select 
                     value={lead.status}
                     onChange={(e) => onUpdateStatus(lead.id, e.target.value)}
@@ -504,14 +517,21 @@ const LeadsEditor = ({ leads, onUpdateStatus, onDelete }: { leads: any[], onUpda
                     <span className="text-sm font-bold text-accent">{lead.plan}</span>
                   </div>
                 )}
-                {lead.source && (
+                {lead.source && lead.source !== 'website_chat' && (
                   <div className="flex items-center gap-2">
                     <span className="text-xs font-bold text-slate-400 uppercase tracking-widest">Джерело:</span>
                     <span className="text-sm text-slate-600">{lead.source}</span>
                   </div>
                 )}
+                {lead.summary && (
+                  <div className="p-3 bg-slate-50 rounded-xl border border-slate-100">
+                    <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest block mb-1">Вижимка діалогу:</span>
+                    <p className="text-slate-700 text-xs whitespace-pre-line leading-relaxed">{lead.summary}</p>
+                  </div>
+                )}
                 {lead.message && (
                   <div className="pt-2 border-t border-slate-50">
+                    <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest block mb-1">Повідомлення:</span>
                     <p className="text-slate-700 text-sm leading-relaxed">{lead.message}</p>
                   </div>
                 )}

@@ -231,6 +231,40 @@ async function ensureTables() {
   }
 }
 
+async function ensureLeadsColumns() {
+  const columnsToAdd = [
+    { name: 'summary', pgType: 'TEXT', sqliteType: 'TEXT' },
+    { name: 'source', pgType: 'TEXT', sqliteType: 'TEXT' },
+    { name: 'session_id', pgType: 'TEXT', sqliteType: 'TEXT' }
+  ];
+
+  if (db.isPostgres) {
+    const existingColumnsRes = await pgPool!.query(`
+      SELECT column_name 
+      FROM information_schema.columns 
+      WHERE table_name = 'leads'
+    `);
+    const existingColumns = existingColumnsRes.rows.map(r => r.column_name.toLowerCase());
+
+    for (const col of columnsToAdd) {
+      if (!existingColumns.includes(col.name.toLowerCase())) {
+        console.log(`Adding missing column '${col.name}' to 'leads' table (PostgreSQL)...`);
+        await pgPool!.query(`ALTER TABLE leads ADD COLUMN ${col.name} ${col.pgType}`);
+      }
+    }
+  } else {
+    const tableInfo = sqliteDb!.prepare("PRAGMA table_info(leads)").all() as any[];
+    const existingColumns = tableInfo.map(col => col.name.toLowerCase());
+
+    for (const col of columnsToAdd) {
+      if (!existingColumns.includes(col.name.toLowerCase())) {
+        console.log(`Adding missing column '${col.name}' to 'leads' table (SQLite)...`);
+        sqliteDb!.prepare(`ALTER TABLE leads ADD COLUMN ${col.name} ${col.sqliteType}`).run();
+      }
+    }
+  }
+}
+
 /**
  * Перевірка та додавання відсутніх колонок у таблицю articles.
  * Це забезпечує зворотну сумісність при оновленні схеми.
@@ -404,6 +438,7 @@ export async function initDb() {
 
     // 2. Додавання відсутніх колонок (безпечна міграція)
     await ensureArticlesColumns();
+    await ensureLeadsColumns();
 
     // 3. Міграція даних (Тимчасово вимкнено за запитом користувача)
     /*
