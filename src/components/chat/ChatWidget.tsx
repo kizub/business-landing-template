@@ -14,10 +14,16 @@ interface Props {
 
 const ChatWidget: React.FC<Props> = ({ session, siteType }) => {
   const [isTyping, setIsTyping] = useState(false);
+  const [showLeadForm, setShowLeadForm] = useState(false);
   const { sendMessage } = useChatApi();
 
   const handleSend = async (text: string, quickAction: string = "") => {
     if (isTyping) return;
+
+    // If user explicitly wants to leave a lead via quick reply, we can force the form
+    const isLeadRequest = quickAction.toLowerCase().includes('заявку') || 
+                         quickAction.toLowerCase().includes('контакт') ||
+                         text.toLowerCase().includes('залишити заявку');
 
     session.addMessage({ role: 'user', text });
     setIsTyping(true);
@@ -26,13 +32,19 @@ const ChatWidget: React.FC<Props> = ({ session, siteType }) => {
       const response = await sendMessage(session.sessionId, text, siteType, quickAction);
       setIsTyping(false);
 
-      session.addMessage({
-        role: 'assistant',
+      const assistantMsg = {
+        role: 'assistant' as const,
         text: response.reply,
         quickReplies: response.quick_replies,
         cta: response.cta,
-        showForm: response.show_form
-      });
+        showForm: response.show_form || isLeadRequest
+      };
+
+      session.addMessage(assistantMsg);
+      
+      if (response.show_form || isLeadRequest) {
+        setShowLeadForm(true);
+      }
     } catch (err) {
       setIsTyping(false);
       session.addMessage({
@@ -43,6 +55,7 @@ const ChatWidget: React.FC<Props> = ({ session, siteType }) => {
   };
 
   const lastMessage = session.messages[session.messages.length - 1];
+  const canShowForm = (showLeadForm || lastMessage?.showForm) && !session.isLeadSent;
 
   return (
     <div className="fixed bottom-24 right-6 w-[360px] h-[500px] bg-white rounded-2xl shadow-2xl flex flex-col z-[9999] border border-slate-100 overflow-hidden">
@@ -62,21 +75,22 @@ const ChatWidget: React.FC<Props> = ({ session, siteType }) => {
 
         {!isTyping && lastMessage?.cta?.visible && (
           <button
-            onClick={() =>
+            onClick={() => {
+              setShowLeadForm(true);
               session.addMessage({
                 role: 'assistant',
                 text: 'Давайте зафіксуємо вашу заявку 👇',
                 showForm: true
-              })
-            }
+              });
+            }}
             className="w-full py-2 bg-accent text-white rounded-lg text-sm font-bold shadow-sm hover:bg-accent/90 transition-colors"
           >
             {lastMessage.cta.label}
           </button>
         )}
 
-        {!isTyping && lastMessage?.showForm && !session.isLeadSent && (
-          <LeadMiniForm session={session} />
+        {!isTyping && canShowForm && (
+          <LeadMiniForm session={session} onSuccess={() => setShowLeadForm(false)} />
         )}
       </div>
 

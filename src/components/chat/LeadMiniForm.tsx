@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { useChatApi } from '../../hooks/useChatApi';
 import { chatStorage } from '../../lib/chatStorage';
 
-const LeadMiniForm: React.FC<{ session: any }> = ({ session }) => {
+const LeadMiniForm: React.FC<{ session: any; onSuccess?: () => void }> = ({ session, onSuccess }) => {
   const [form, setForm] = useState({ name: '', phone: '', telegram: '', comment: '' });
   const [loading, setLoading] = useState(false);
   const { sendLead } = useChatApi();
@@ -24,6 +24,7 @@ const LeadMiniForm: React.FC<{ session: any }> = ({ session }) => {
       if (res.ok) {
         chatStorage.setLeadSent(true);
         session.setIsLeadSent(true);
+        if (onSuccess) onSuccess();
         session.addMessage({ 
           role: 'assistant', 
           text: "Дякую! Ваша заявка отримана. Я зв'яжусь з вами найближчим часом." 
