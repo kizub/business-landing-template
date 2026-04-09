@@ -22,7 +22,7 @@ const LeadMiniForm: React.FC<{ session: any; onSuccess?: () => void }> = ({ sess
       });
 
       if (res.ok) {
-        chatStorage.setLeadSent(true);
+        chatStorage.setLeadSent(session.sessionId, true);
         session.setIsLeadSent(true);
         if (onSuccess) onSuccess();
         session.addMessage({ 

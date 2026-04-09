@@ -15,7 +15,7 @@ export const useChatSession = (siteType: SiteType) => {
       chatStorage.setSessionId(sId);
     }
     setSessionId(sId);
-    setIsLeadSent(chatStorage.getLeadSent());
+    setIsLeadSent(chatStorage.getLeadSent(sId));
     chatStorage.setEntryPage(window.location.pathname);
   }, []);
 
@@ -30,6 +30,12 @@ export const useChatSession = (siteType: SiteType) => {
 
   const initChat = () => {
     if (messages.length === 0) {
+      // Reset lead status for a fresh conversation
+      setIsLeadSent(false);
+      if (sessionId) {
+        chatStorage.setLeadSent(sessionId, false);
+      }
+
       const text = siteType === 'portfolio' 
         ? "Привіт. Я AI-менеджер. Можу підказати, який формат сайту вам підійде, зорієнтувати по вартості і показати, як працює система."
         : "Привіт. Зараз ви дивитесь демо-сайт. Я можу показати, як така система працює для бізнесу і як вона переводить відвідувача в заявку.";

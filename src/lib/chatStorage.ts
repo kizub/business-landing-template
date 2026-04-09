@@ -5,16 +5,16 @@ const KEYS = {
 };
 
 export const chatStorage = {
-  getSessionId: () => localStorage.getItem(KEYS.SESSION_ID),
-  setSessionId: (id: string) => localStorage.setItem(KEYS.SESSION_ID, id),
+  getSessionId: () => sessionStorage.getItem(KEYS.SESSION_ID),
+  setSessionId: (id: string) => sessionStorage.setItem(KEYS.SESSION_ID, id),
   
-  getLeadSent: () => localStorage.getItem(KEYS.LEAD_SENT) === 'true',
-  setLeadSent: (sent: boolean) => localStorage.setItem(KEYS.LEAD_SENT, String(sent)),
+  getLeadSent: (sessionId: string) => sessionStorage.getItem(`${KEYS.LEAD_SENT}_${sessionId}`) === 'true',
+  setLeadSent: (sessionId: string, sent: boolean) => sessionStorage.setItem(`${KEYS.LEAD_SENT}_${sessionId}`, String(sent)),
   
-  getEntryPage: () => localStorage.getItem(KEYS.ENTRY_PAGE),
+  getEntryPage: () => sessionStorage.getItem(KEYS.ENTRY_PAGE),
   setEntryPage: (page: string) => {
-    if (!localStorage.getItem(KEYS.ENTRY_PAGE)) {
-      localStorage.setItem(KEYS.ENTRY_PAGE, page);
+    if (!sessionStorage.getItem(KEYS.ENTRY_PAGE)) {
+      sessionStorage.setItem(KEYS.ENTRY_PAGE, page);
     }
   },
 
