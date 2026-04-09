@@ -186,8 +186,9 @@ async function ensureTables() {
     )`,
     `CREATE TABLE IF NOT EXISTS leads (
       id SERIAL PRIMARY KEY,
-      name TEXT NOT NULL,
-      contact TEXT NOT NULL,
+      session_id TEXT UNIQUE,
+      name TEXT,
+      contact TEXT,
       message TEXT,
       plan TEXT,
       source TEXT,

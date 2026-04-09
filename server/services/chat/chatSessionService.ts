@@ -32,7 +32,7 @@ export const processChatMessage = async (payload: ChatMessagePayload): Promise<A
   // Add user message to session
   session.messages.push({
     role: "user",
-    text: message,
+    text: effectiveMessage,
     createdAt: timestamp || new Date().toISOString()
   });
 
