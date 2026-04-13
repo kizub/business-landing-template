@@ -2,6 +2,12 @@ import React, { useState } from 'react';
 import { useChatApi } from '../../hooks/useChatApi';
 import { chatStorage } from '../../lib/chatStorage';
 
+declare global {
+  interface Window {
+    gtag?: (...args: any[]) => void;
+  }
+}
+
 const LeadMiniForm: React.FC<{ session: any; onSuccess?: () => void }> = ({ session, onSuccess }) => {
   const [form, setForm] = useState({ name: '', phone: '', telegram: '', comment: '' });
   const [loading, setLoading] = useState(false);
@@ -9,12 +15,14 @@ const LeadMiniForm: React.FC<{ session: any; onSuccess?: () => void }> = ({ sess
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+
     if (!form.phone && !form.telegram) {
       alert('Будь ласка, вкажіть телефон або Telegram');
       return;
     }
 
     setLoading(true);
+
     try {
       const res = await sendLead({
         sessionId: session.sessionId,
@@ -22,12 +30,20 @@ const LeadMiniForm: React.FC<{ session: any; onSuccess?: () => void }> = ({ sess
       });
 
       if (res.ok) {
+        if (typeof window !== 'undefined' && window.gtag) {
+          window.gtag('event', 'conversion', {
+            send_to: 'AW-18087000874/QnEpCNdnuJscEKr2xrBD'
+          });
+        }
+
         chatStorage.setLeadSent(session.sessionId, true);
         session.setIsLeadSent(true);
+
         if (onSuccess) onSuccess();
-        session.addMessage({ 
-          role: 'assistant', 
-          text: "Дякую! Ваша заявка отримана. Я зв'яжусь з вами найближчим часом." 
+
+        session.addMessage({
+          role: 'assistant',
+          text: "Дякую! Ваша заявка отримана. Я зв'яжусь з вами найближчим часом."
         });
       }
     } catch (err) {
@@ -39,34 +55,41 @@ const LeadMiniForm: React.FC<{ session: any; onSuccess?: () => void }> = ({ sess
 
   return (
     <form onSubmit={handleSubmit} className="bg-white p-4 rounded-xl border border-slate-200 shadow-sm space-y-3">
-      <div className="text-xs font-bold text-slate-800 mb-2 uppercase tracking-wider">Залишити контакти</div>
+      <div className="text-xs font-bold text-slate-800 mb-2 uppercase tracking-wider">
+        Залишити контакти
+      </div>
+
       <input
         type="text"
         placeholder="Ваше ім'я"
         className="w-full text-xs p-2 border border-slate-200 rounded-lg outline-none focus:border-accent"
         value={form.name}
-        onChange={e => setForm({...form, name: e.target.value})}
+        onChange={(e) => setForm({ ...form, name: e.target.value })}
       />
+
       <input
         type="text"
         placeholder="Телефон"
         className="w-full text-xs p-2 border border-slate-200 rounded-lg outline-none focus:border-accent"
         value={form.phone}
-        onChange={e => setForm({...form, phone: e.target.value})}
+        onChange={(e) => setForm({ ...form, phone: e.target.value })}
       />
+
       <input
         type="text"
         placeholder="Telegram"
         className="w-full text-xs p-2 border border-slate-200 rounded-lg outline-none focus:border-accent"
         value={form.telegram}
-        onChange={e => setForm({...form, telegram: e.target.value})}
+        onChange={(e) => setForm({ ...form, telegram: e.target.value })}
       />
+
       <textarea
         placeholder="Коментар"
         className="w-full text-xs p-2 border border-slate-200 rounded-lg outline-none focus:border-accent h-16 resize-none"
         value={form.comment}
-        onChange={e => setForm({...form, comment: e.target.value})}
+        onChange={(e) => setForm({ ...form, comment: e.target.value })}
       />
+
       <button
         type="submit"
         disabled={loading}
