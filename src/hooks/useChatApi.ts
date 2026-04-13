@@ -1,9 +1,15 @@
 import { ChatRequest, ChatResponse, LeadPayload, SiteType } from '../lib/chatTypes';
 
+declare global {
+  interface Window {
+    gtag?: (...args: any[]) => void;
+  }
+}
+
 export const useChatApi = () => {
   const sendMessage = async (
-    sessionId: string, 
-    text: string, 
+    sessionId: string,
+    text: string,
     siteType: SiteType,
     quickAction: string = ""
   ): Promise<ChatResponse> => {
@@ -39,7 +45,17 @@ export const useChatApi = () => {
     });
 
     if (!response.ok) throw new Error('Network response was not ok');
-    return response.json();
+
+    const result = await response.json();
+
+    // Google Ads conversion tracking
+    if (result?.ok && typeof window !== 'undefined' && window.gtag) {
+      window.gtag('event', 'conversion', {
+        send_to: 'AW-18087000874/QnEpCNdnuJscEKr2xrBD'
+      });
+    }
+
+    return result;
   };
 
   return { sendMessage, sendLead };
