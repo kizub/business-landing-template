@@ -1,31 +1,25 @@
 <!doctype html>
-<html lang="en">
+<html lang="uk">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Roman Dev | Автономні системи залучення клієнтів | Roman Dev</title>
+    <title>Roman Dev | Автономні системи залучення клієнтів</title>
 
-    <!-- Google tag (gtag.js) -->
+    <!-- Google Ads -->
     <script async src="https://www.googletagmanager.com/gtag/js?id=AW-18087000874"></script>
     <script>
       window.dataLayer = window.dataLayer || [];
       function gtag(){dataLayer.push(arguments);}
       gtag('js', new Date());
 
-      // Google Ads
       gtag('config', 'AW-18087000874');
-
-      // Google Analytics (GA4)
-      gtag('config', '%VITE_GA_MEASUREMENT_ID%');
     </script>
-
-    <!-- reCAPTCHA v3 -->
-    <script src="https://www.google.com/recaptcha/api.js?render=%VITE_RECAPTCHA_SITE_KEY%"></script>
   </head>
+
   <body>
     <div id="root"></div>
 
-    
+    <!-- Vite inject script -->
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>
