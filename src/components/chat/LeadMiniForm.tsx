@@ -2,12 +2,6 @@ import React, { useState } from 'react';
 import { useChatApi } from '../../hooks/useChatApi';
 import { chatStorage } from '../../lib/chatStorage';
 
-declare global {
-  interface Window {
-    gtag?: (...args: any[]) => void;
-  }
-}
-
 const LeadMiniForm: React.FC<{ session: any; onSuccess?: () => void }> = ({ session, onSuccess }) => {
   const [form, setForm] = useState({ name: '', phone: '', telegram: '', comment: '' });
   const [loading, setLoading] = useState(false);
@@ -30,12 +24,6 @@ const LeadMiniForm: React.FC<{ session: any; onSuccess?: () => void }> = ({ sess
       });
 
       if (res.ok) {
-        if (typeof window !== 'undefined' && window.gtag) {
-          window.gtag('event', 'conversion', {
-            send_to: 'AW-18087000874/QnEpCNdnuJscEKr2xrBD'
-          });
-        }
-
         chatStorage.setLeadSent(session.sessionId, true);
         session.setIsLeadSent(true);
 
