@@ -2,7 +2,21 @@ import React, { useState } from 'react';
 import { useChatApi } from '../../hooks/useChatApi';
 import { chatStorage } from '../../lib/chatStorage';
 
-const LeadMiniForm: React.FC<{ session: any; onSuccess?: () => void }> = ({ session, onSuccess }) => {
+interface LeadMiniFormProps {
+  session: any;
+  onSuccess?: () => void;
+  conversationStage?: string;
+  managerNote?: string;
+  userJourney?: string[];
+}
+
+const LeadMiniForm: React.FC<LeadMiniFormProps> = ({
+  session,
+  onSuccess,
+  conversationStage,
+  managerNote,
+  userJourney
+}) => {
   const [form, setForm] = useState({ name: '', phone: '', telegram: '', comment: '' });
   const [loading, setLoading] = useState(false);
   const { sendLead } = useChatApi();
@@ -20,7 +34,10 @@ const LeadMiniForm: React.FC<{ session: any; onSuccess?: () => void }> = ({ sess
     try {
       const res = await sendLead({
         sessionId: session.sessionId,
-        ...form
+        ...form,
+        conversation_stage: conversationStage || '',
+        manager_note: managerNote || '',
+        user_journey: Array.isArray(userJourney) ? userJourney : []
       });
 
       if (res.ok) {
