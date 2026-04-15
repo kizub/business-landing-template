@@ -87,7 +87,3 @@ export const processChatMessage = async (payload: ChatMessagePayload): Promise<A
   return aiResponse;
 };
 
-  chatMemoryStore.setSession(sessionId, session);
-
-  return aiResponse;
-};
