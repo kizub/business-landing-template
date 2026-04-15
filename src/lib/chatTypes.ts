@@ -34,6 +34,12 @@ export interface ChatResponse {
   show_form: boolean;
   quick_replies: string[];
   captured_fields: Record<string, any>;
+
+  // 🔥 Нові поля для передачі контексту менеджеру
+  conversation_stage: string;
+  manager_note: string;
+  user_journey: string[];
+
   cta: {
     label: string;
     visible: boolean;
@@ -46,6 +52,11 @@ export interface LeadPayload {
   phone: string;
   telegram: string;
   comment: string;
+
+  // 🔥 Передаємо контекст діалогу разом із заявкою
+  conversation_stage?: string;
+  manager_note?: string;
+  user_journey?: string[];
 }
 
 export interface ChatSessionHook {
