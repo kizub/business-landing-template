@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import ChatMessages from './ChatMessages';
 import ChatInput from './ChatInput';
 import ChatQuickReplies from './ChatQuickReplies';
@@ -15,19 +15,18 @@ interface Props {
 const ChatWidget: React.FC<Props> = ({ session, siteType }) => {
   const [isTyping, setIsTyping] = useState(false);
   const [showLeadForm, setShowLeadForm] = useState(false);
-  const [formIntent, setFormIntent] = useState(false);
-  const [formShownInSession, setFormShownInSession] = useState(false);
+
+  const [leadContext, setLeadContext] = useState<{
+    conversation_stage?: string;
+    manager_note?: string;
+    user_journey?: string[];
+  }>({
+    conversation_stage: '',
+    manager_note: '',
+    user_journey: []
+  });
+
   const { sendMessage } = useChatApi();
-
-  const userMessagesCount = session.messages.filter(m => m.role === 'user').length;
-  const minimumUserMessagesReached = userMessagesCount >= 3;
-
-  useEffect(() => {
-    if (minimumUserMessagesReached && formIntent && !formShownInSession && !session.isLeadSent) {
-      setShowLeadForm(true);
-      setFormShownInSession(true);
-    }
-  }, [minimumUserMessagesReached, formIntent, formShownInSession, session.isLeadSent]);
 
   const handleSend = async (text: string, quickAction: string = "") => {
     if (isTyping) return;
@@ -39,6 +38,12 @@ const ChatWidget: React.FC<Props> = ({ session, siteType }) => {
       const response = await sendMessage(session.sessionId, text, siteType, quickAction);
       setIsTyping(false);
 
+      setLeadContext({
+        conversation_stage: response.conversation_stage || '',
+        manager_note: response.manager_note || '',
+        user_journey: Array.isArray(response.user_journey) ? response.user_journey : []
+      });
+
       const assistantMsg = {
         role: 'assistant' as const,
         text: response.reply,
@@ -48,9 +53,11 @@ const ChatWidget: React.FC<Props> = ({ session, siteType }) => {
       };
 
       session.addMessage(assistantMsg);
-      
-      if (response.show_form) {
-        setFormIntent(true);
+
+      if (response.lead_ready && response.show_form && !session.isLeadSent) {
+        setShowLeadForm(true);
+      } else if (!session.isLeadSent) {
+        setShowLeadForm(false);
       }
     } catch (err) {
       setIsTyping(false);
@@ -80,24 +87,9 @@ const ChatWidget: React.FC<Props> = ({ session, siteType }) => {
         <ChatMessages messages={session.messages} />
         {isTyping && <TypingIndicator />}
 
-        {!isTyping && lastMessage?.cta?.visible && (
+        {!isTyping && lastMessage?.cta?.visible && !canShowForm && (
           <button
-            onClick={() => {
-              if (minimumUserMessagesReached) {
-                setShowLeadForm(true);
-                setFormShownInSession(true);
-                session.addMessage({
-                  role: 'assistant',
-                  text: 'Давайте зафіксуємо вашу заявку 👇',
-                  showForm: true
-                });
-              } else {
-                session.addMessage({
-                  role: 'assistant',
-                  text: "Ще трохи уточню і після цього зафіксуємо заявку."
-                });
-              }
-            }}
+            onClick={() => handleSend(lastMessage.cta?.label || 'Хочу консультацію', lastMessage.cta?.label || 'Хочу консультацію')}
             className="w-full py-2 bg-accent text-white rounded-lg text-sm font-bold shadow-sm hover:bg-accent/90 transition-colors"
           >
             {lastMessage.cta.label}
@@ -105,7 +97,13 @@ const ChatWidget: React.FC<Props> = ({ session, siteType }) => {
         )}
 
         {!isTyping && canShowForm && (
-          <LeadMiniForm session={session} onSuccess={() => setShowLeadForm(false)} />
+          <LeadMiniForm
+            session={session}
+            onSuccess={() => setShowLeadForm(false)}
+            conversationStage={leadContext.conversation_stage}
+            managerNote={leadContext.manager_note}
+            userJourney={leadContext.user_journey}
+          />
         )}
       </div>
 
