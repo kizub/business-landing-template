@@ -201,7 +201,7 @@ siteType = "${siteType}"
 Відповідай тільки JSON.
 `;
 
-  const contents = [
+const contents = [
     ...sessionMessages.map(m => ({
       role: m.role === "user" ? "user" : "model",
       parts: [{ text: m.text }]
@@ -220,17 +220,25 @@ siteType = "${siteType}"
           type: Type.OBJECT,
           properties: {
             reply: { type: Type.STRING },
-            intent: { 
-              type: Type.STRING,
-              description: "pricing | features | demo | packages | support | lead_ready | unknown"
-            },
+            intent: { type: Type.STRING },
             lead_ready: { type: Type.BOOLEAN },
             show_form: { type: Type.BOOLEAN },
+
             quick_replies: { 
               type: Type.ARRAY,
               items: { type: Type.STRING }
             },
+
             captured_fields: { type: Type.OBJECT },
+
+            // 🔥 ДОДАЛИ
+            conversation_stage: { type: Type.STRING },
+            manager_note: { type: Type.STRING },
+            user_journey: {
+              type: Type.ARRAY,
+              items: { type: Type.STRING }
+            },
+
             cta: {
               type: Type.OBJECT,
               properties: {
@@ -240,7 +248,17 @@ siteType = "${siteType}"
               required: ["label", "visible"]
             }
           },
-          required: ["reply", "intent", "lead_ready", "show_form", "quick_replies", "cta"]
+          required: [
+            "reply",
+            "intent",
+            "lead_ready",
+            "show_form",
+            "quick_replies",
+            "conversation_stage",
+            "manager_note",
+            "user_journey",
+            "cta"
+          ]
         }
       }
     });
@@ -257,11 +275,18 @@ siteType = "${siteType}"
       show_form: !!parsed.show_form,
       quick_replies: Array.isArray(parsed.quick_replies) ? parsed.quick_replies : [],
       captured_fields: parsed.captured_fields || {},
+
+      // 🔥 ДОДАЛИ
+      conversation_stage: parsed.conversation_stage || "unknown",
+      manager_note: parsed.manager_note || "",
+      user_journey: Array.isArray(parsed.user_journey) ? parsed.user_journey : [],
+
       cta: {
         label: parsed.cta?.label || "Отримати розрахунок",
         visible: parsed.cta?.visible !== undefined ? parsed.cta.visible : true,
       },
     };
+
   } catch (error: any) {
     console.error("Gemini Error:", error);
     throw error;
