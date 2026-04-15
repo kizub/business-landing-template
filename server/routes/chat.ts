@@ -26,34 +26,50 @@ function isNonEmptyString(value: unknown): value is string {
 
 function generateDialogueSummary(messages: any[]): string {
   if (!messages || messages.length === 0) return "-";
-  
-  const userMessages = messages.filter(m => m.role === "user");
+
+  const userMessages = messages.filter((m) => m.role === "user");
   if (userMessages.length === 0) return "-";
 
   const summaryLines: string[] = [];
-  const allUserText = userMessages.map(m => m.text.toLowerCase()).join(" ");
-  
-  if (allUserText.includes("цін") || allUserText.includes("вартість") || allUserText.includes("скільки")) {
+  const allUserText = userMessages.map((m) => m.text.toLowerCase()).join(" ");
+
+  if (
+    allUserText.includes("цін") ||
+    allUserText.includes("вартість") ||
+    allUserText.includes("скільки")
+  ) {
     summaryLines.push("- Питав про вартість послуг");
   }
-  
+
   if (allUserText.includes("лендінг") || allUserText.includes("landing")) {
     summaryLines.push("- Обговорювали розробку лендінгу");
   } else if (allUserText.includes("сайт") || allUserText.includes("бізнес")) {
     summaryLines.push("- Обговорювали бізнес-сайт");
   }
 
-  if (allUserText.includes("ai") || allUserText.includes("менеджер") || allUserText.includes("бот")) {
+  if (
+    allUserText.includes("ai") ||
+    allUserText.includes("менеджер") ||
+    allUserText.includes("бот")
+  ) {
     summaryLines.push("- Цікавився AI-менеджером/автоматизацією");
   }
 
-  if (allUserText.includes("заявк") || allUserText.includes("контакт") || allUserText.includes("залишити")) {
+  if (
+    allUserText.includes("заявк") ||
+    allUserText.includes("контакт") ||
+    allUserText.includes("залишити")
+  ) {
     summaryLines.push("- Виявив готовність залишити контакти");
   }
 
   if (summaryLines.length < 3) {
     const lastMsg = userMessages[userMessages.length - 1].text;
-    summaryLines.push(`- Останній меседж: "${lastMsg.substring(0, 60)}${lastMsg.length > 60 ? "..." : ""}"`);
+    summaryLines.push(
+      `- Останній меседж: "${lastMsg.substring(0, 60)}${
+        lastMsg.length > 60 ? "..." : ""
+      }"`
+    );
   }
 
   return summaryLines.slice(0, 5).join("\n");
@@ -105,6 +121,17 @@ router.post("/lead", async (req: Request, res: Response) => {
     const source = "website_chat";
     const session = chatMemoryStore.getSession(payload.sessionId);
 
+    let leadScore = "🔵 ХОЛОДНИЙ ЛІД";
+
+    if (payload.conversation_stage === "lead_ready") {
+      leadScore = "🔥 ГАРЯЧИЙ ЛІД";
+    } else if (
+      payload.conversation_stage === "soft_ready" ||
+      payload.conversation_stage === "solution_fit"
+    ) {
+      leadScore = "🟡 ТЕПЛИЙ ЛІД";
+    }
+
     let summary = "-";
 
     if (payload.manager_note || payload.user_journey) {
@@ -127,8 +154,10 @@ ${journeyText}
       summary = session ? generateDialogueSummary(session.messages) : "-";
     }
 
-    const existing = await db.get("SELECT id FROM leads WHERE session_id = ?", [payload.sessionId]);
-    
+    const existing = await db.get("SELECT id FROM leads WHERE session_id = ?", [
+      payload.sessionId
+    ]);
+
     if (existing) {
       await db.run(
         `UPDATE leads SET 
@@ -163,25 +192,34 @@ ${journeyText}
       (async () => {
         try {
           const messageText = `
-🔥 НОВИЙ ЛІД
+${leadScore}
 
 👤 Ім'я: ${payload.name || "-"}
 📞 Телефон: ${payload.phone || "-"}
 ✈️ Telegram: ${payload.telegram || "-"}
 💬 Коментар: ${payload.comment || "-"}
 
+--------------------
+
 ${summary}
+
+--------------------
 
 🆔 Session: ${payload.sessionId}
 📍 Source: website_chat
           `.trim();
 
-          const tgRes = await axios.post(`https://api.telegram.org/bot${botToken}/sendMessage`, {
-            chat_id: chatId,
-            text: messageText,
-          });
+          const tgRes = await axios.post(
+            `https://api.telegram.org/bot${botToken}/sendMessage`,
+            {
+              chat_id: chatId,
+              text: messageText
+            }
+          );
 
-          console.log(`[Telegram] Chat lead sent successfully. Message ID: ${tgRes.data?.result?.message_id}`);
+          console.log(
+            `[Telegram] Chat lead sent successfully. Message ID: ${tgRes.data?.result?.message_id}`
+          );
         } catch (tgErr: any) {
           console.error("[Telegram] Error sending chat lead:");
           if (tgErr.response) {
