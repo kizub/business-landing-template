@@ -1,12 +1,12 @@
 export type SiteType = "portfolio" | "demo";
 
-export type ChatIntent = 
-  | "pricing" 
-  | "features" 
-  | "demo" 
-  | "packages" 
-  | "support" 
-  | "lead_ready" 
+export type ChatIntent =
+  | "pricing"
+  | "features"
+  | "demo"
+  | "packages"
+  | "support"
+  | "lead_ready"
   | "unknown";
 
 export interface ChatMessage {
@@ -68,4 +68,7 @@ export interface LeadPayload {
   phone: string;
   telegram: string;
   comment: string;
+  conversation_stage?: string;
+  manager_note?: string;
+  user_journey?: string[];
 }
