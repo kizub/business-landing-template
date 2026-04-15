@@ -39,6 +39,9 @@ export interface AssistantResponse {
   show_form: boolean;
   quick_replies: string[];
   captured_fields: Record<string, any>;
+  conversation_stage?: string;
+  manager_note?: string;
+  user_journey?: string[];
   cta: {
     label: string;
     visible: boolean;
