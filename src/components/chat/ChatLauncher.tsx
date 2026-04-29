@@ -1,5 +1,5 @@
 import React from 'react';
-import { Sparkles, X } from 'lucide-react';
+import { X } from 'lucide-react';
 import ChatWidget from './ChatWidget';
 import { useChatSession } from '../../hooks/useChatSession';
 import { SiteType } from '../../lib/chatTypes';
@@ -46,7 +46,13 @@ const ChatLauncher: React.FC<Props> = ({ siteType }) => {
               {session.isOpen ? (
                 <X size={30} className="transition-transform duration-300" />
               ) : (
-                <Sparkles size={34} className="transition-transform duration-300 group-hover:scale-110 drop-shadow-[0_0_8px_rgba(59,130,246,0.6)]" />
+                /* SCI-FI AI Core Icon */
+                <div className="relative w-6 h-6 flex items-center justify-center group-hover:scale-110 transition-transform duration-300">
+                  <span className="absolute inset-0 rounded-full border border-cyan-400/40" />
+                  <span className="absolute w-4 h-4 rounded-full bg-blue-500/20 blur-sm" />
+                  <span className="relative w-2.5 h-2.5 bg-cyan-400 rounded-full shadow-[0_0_10px_rgba(34,211,238,0.9)]" />
+                  <span className="absolute w-1 h-1 bg-white rounded-full animate-ping opacity-70" />
+                </div>
               )}
               
               {/* AI Badge */}
